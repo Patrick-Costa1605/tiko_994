@@ -57,7 +57,7 @@ _MARK = re.compile(r"\*\*(.+?)\*\*|\*(.+?)\*")
 
 
 def parse_markup(text):
-    """'Olá *Caxinas*! **35** anos' -> lista de palavras [{text, style}] (style: None|'y'|'g').
+    """'Olá *Caxinas*! **Sempre** Alerta' -> lista de palavras [{text, style}] (style: None|'y'|'g').
 
     *x* = destaque amarelo, **x** = destaque verde. Pontuação colada fica na mesma palavra.
     """
@@ -93,3 +93,27 @@ def syllables(s):
     n = len(re.findall(r"[aeiouáéíóúâêôãõàüy]+", s.lower()))
     n += 2 * len(re.findall(r"\d", s))
     return max(1, n)
+
+
+_BREAK = re.compile(r'<break\s+time="(\d+)(ms|s)"\s*/?>', re.I)
+
+
+def split_pauses(text):
+    """'Olá!<break time="250ms"/> Tudo bem?' -> [('Olá!', 0.25), ('Tudo bem?', 0.0)].
+
+    O edge-tts não interpreta SSML, por isso cada pedaço é sintetizado em separado e o
+    silêncio é inserido pelo gerador (pausas cómicas exatas e sem depender do serviço).
+    """
+    parts, pos = [], 0
+    for m in _BREAK.finditer(text):
+        seg = text[pos:m.start()].strip()
+        pause = int(m.group(1)) / (1000 if m.group(2).lower() == "ms" else 1)
+        if seg:
+            parts.append([seg, pause])
+        elif parts:
+            parts[-1][1] += pause
+        pos = m.end()
+    tail = text[pos:].strip()
+    if tail:
+        parts.append([tail, 0.0])
+    return [tuple(p) for p in parts]

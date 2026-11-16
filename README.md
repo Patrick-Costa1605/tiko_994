@@ -1,33 +1,33 @@
-# Tiko · Reels 994-Caxinas (#35AnosDeExemplo)
+# Tiko · Reels do 994 Caxinas
 
-Gerador de vídeos verticais (1080×1920, 30 fps) com o Tiko, boneco de pauzinhos com lenço escutista.
-Stack: **Python** — `edge-tts` (voz pt-PT), `pycairo` (vetor), `numpy` (lip-sync), `ffmpeg`.
+Gerador de vídeos verticais (1080×1920, **60 fps**) com o Tiko, mascote do Agrupamento 994 – Caxinas.
+Stack: **Python** — `edge-tts` (voz pt-PT), `pycairo` (vetor), `numpy` (lip-sync/áudio), `ffmpeg`.
 
-## Instalar
+## Instalar e renderizar
 ```bash
-pip install -r requirements.txt     # pycairo pode precisar de libcairo (Linux: libcairo2-dev; macOS: brew install cairo pkg-config)
+pip install -r requirements.txt        # pycairo pode precisar de libcairo (Linux: libcairo2-dev; macOS: brew install cairo pkg-config)
+python src/palette.py                  # (opcional) volta a extrair a paleta de assets/logo-994.png
+python src/render.py guioes/ep01_apresentacao.json            # -> output/ep01_apresentacao.mp4 (+ .mp3, .timings.json)
+python src/render.py guioes/ep01_apresentacao.json --png 2 9  # só imagens de teste (segundos)
 ```
-Fonte usada: **Inter** (instalar no sistema; sem ela o cairo usa uma sans-serif genérica).
+Fonte: **Inter** instalada no sistema. A voz fica em cache (`assets/audio_cache/`). Atrás de proxy usa-se `HTTPS_PROXY`.
 
-## Renderizar
-```bash
-python scripts/render.py episodios/episodio_01.json            # -> output/episodio_01.mp4 (+ .mp3 e .timings.json)
-python scripts/render.py episodios/episodio_01.json --png 2 9  # só imagens de teste nos segundos 2 e 9
-```
-A voz fica em cache (`assets/audio_cache/`), por isso ajustar visuais não volta a chamar o serviço de TTS.
-Atrás de proxy, o `HTTPS_PROXY` é usado automaticamente.
-
-## Guião (`episodios/*.json`)
+## Guião (`guioes/*.json`)
 | campo | descrição |
 |---|---|
-| `voz` | `nome`, `velocidade` (`+5%`), `tom` (`+4Hz`) |
-| `pronuncia` | substitui o texto *falado* (`"994": "nove nove quatro"`) sem mudar a legenda |
-| `blocos[].texto` | `*amarelo*`, `**verde**` marcam palavras-chave nas legendas |
-| `blocos[].estado` | `normal` · `entusiasmado` · `confuso` · `assustado` · `saudacao` |
-| `blocos[].ilustracao` | lista de ícones para o quadro: `tenda`, `tenda_caida`, `fogueira`, `corda`, `mochila`, `seta`, `lenco`, `estrela`, `bussola`, `35`, `pinheiro`, `texto:QUALQUER COISA` |
-| `outro.fala` | fala do cartão final (2.5 s; estende se a fala não couber) |
+| `voz` | `nome`, `velocidade` (`+14%`), `tom` (`+3Hz`) |
+| `pronuncia` | texto *falado* diferente do escrito (`"994": "nove nove quatro"`) |
+| `final_extra` | segundos de «respiração» no fim (logótipo a brilhar) |
+| `blocos[].texto` | `*amarelo*` e `**verde**` = palavras-chave; `<break time="250ms"/>` = pausa cómica exata |
+| `blocos[].estado` | `normal` · `entusiasmado` · `confuso` · `assustado` · `saudacao` · `orgulhoso` (ajeita o lenço) |
+| `blocos[].ilustracao` | `tenda`, `tenda_caida`, `fogueira`, `corda`/`no`, `mochila`, `seta`, `lenco`, `estrela(s)`, `exclamacao`, `bussola`, `pinheiro`, `logo`, `texto:ABC`; `nome@1.3` = 30% maior |
+| `blocos[].lado` | onde fica o Tiko: `centro` (sem ilustrações), `esquerda`, `direita` — desliza suavemente |
+| `blocos[].camara` | `normal` · `punch` (micro-zoom a ~112%) · `aperto` · `lento` (zoom contínuo) |
+| `blocos[].punches` | segundos (relativos ao bloco) de punch-ins extra, ex. para piadas |
+| `blocos[].sfx` | efeitos extra: `{"tipo":"ding","em":3.9}` (`pop`, `whoosh`, `ding`, `boing`, `tick`) |
 
-## Código
-- `scripts/tts.py` voz + timestamps por palavra · `audio.py` envelope/lip-sync
-- `scripts/character.py` Tiko e poses (acrescentar emoção = nova entrada em `POSES`)
-- `scripts/props.py` ícones do quadro · `subtitles.py` legendas · `scene.py` composição · `render.py` pipeline
+## Código (`src/`)
+`render.py` pipeline · `tts.py` voz+pausas · `audio.py` lip-sync (amplitude + centroide espectral → 5 bocas) e SFX procedurais ·
+`character.py` Tiko (IK, squash & stretch, lenço com física) · `props.py` ilustrações/VFX · `background.py` fundo e parallax ·
+`subtitles.py` legendas · `scene.py` câmara e composição · `palette.py` cores do logótipo.
+O lenço usa verde com debrum amarelo do logótipo (`SCARF`/`TRIM` em `src/config.py`).

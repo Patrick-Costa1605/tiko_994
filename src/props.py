@@ -12,8 +12,8 @@ def _norm(name):
     return s.replace(" ", "_").replace("-", "_")
 
 
-def _st(ctx, w=9, color=INK):
-    ctx.set_source_rgb(*color)
+def _st(ctx, w=9, color=INK, alpha=1.0):
+    ctx.set_source_rgba(*color, alpha)
     ctx.set_line_width(w)
     ctx.set_line_cap(cairo.LINE_CAP_ROUND)
     ctx.set_line_join(cairo.LINE_JOIN_ROUND)
@@ -42,32 +42,74 @@ def _rrect(ctx, x, y, w, h, r):
     ctx.close_path()
 
 
-TENT = (0.36, 0.68, 0.45)
+TENT = mix(LOGO_GREEN, WHITE, 0.25)
+LOGO = None   # superfície cairo do logótipo (definida pela cena)
+
+
+def _ease(x):
+    x = max(0.0, min(1.0, x))
+    return x * x * (3 - 2 * x)
 
 
 def tenda(ctx, t):
-    _st(ctx, 6)
-    for s in (-1, 1):                                   # tirantes + estacas
-        ctx.move_to(s * 78, 20)
-        ctx.line_to(s * 175, 112)
-        ctx.stroke()
-        _poly(ctx, [(s * 175 - 7, 112), (s * 175 + 7, 112), (s * 175, 126)])
-        _fs(ctx, BROWN, 4)
-    _poly(ctx, [(-140, 112), (0, -112), (140, 112)])
-    _fs(ctx, TENT, 10)
-    _poly(ctx, [(-46, 112), (0, -22), (46, 112)])
-    _fs(ctx, (0.16, 0.2, 0.17), 8)
-    _st(ctx, 7)
-    ctx.move_to(0, -112)
-    ctx.line_to(0, -150)
-    ctx.stroke()
-    fl = math.sin(t * 6) * 5
-    _poly(ctx, [(0, -150), (38, -140 + fl), (0, -126)])
-    _fs(ctx, YELLOW, 6)
+    """A tenda monta-se sozinha: varões sobem, a lona desdobra-se e a bandeira abre."""
+    pr = max(0.0, min(t / 1.15, 1.0))
     _st(ctx, 8)
     ctx.move_to(-190, 112)
     ctx.line_to(190, 112)
     ctx.stroke()
+    rise = _ease(pr / 0.35)
+    if pr < 0.75:                                       # varões
+        _st(ctx, 9, BROWN)
+        for s in (-1, 1):
+            ctx.move_to(s * 140, 112)
+            ctx.line_to(s * 140 * (1 - rise) , 112 - 224 * rise)
+            ctx.stroke()
+    k = _back2((pr - 0.25) / 0.5)
+    ctx.save()
+    ctx.translate(0, 112)
+    ctx.scale(0.7 + 0.3 * min(k, 1.0), max(k, 0.001))
+    ctx.translate(0, -112)
+    if k > 0.01:
+        _poly(ctx, [(-140, 112), (0, -112), (140, 112)])
+        _fs(ctx, TENT, 10)
+        _poly(ctx, [(-46, 112), (0, -22), (46, 112)])
+        _fs(ctx, (0.16, 0.2, 0.17), 8)
+        _st(ctx, 5, mix(TENT, BLACK, 0.4))
+        ctx.move_to(-70, 100)
+        ctx.line_to(-18, -40)
+        ctx.move_to(70, 100)
+        ctx.line_to(18, -40)
+        ctx.stroke()
+    ctx.restore()
+    if pr > 0.55:                                       # tirantes + estacas
+        f = _ease((pr - 0.55) / 0.3)
+        _st(ctx, 6)
+        for s in (-1, 1):
+            ctx.move_to(s * 78, 20)
+            ctx.line_to(s * (78 + 97 * f), 20 + 92 * f)
+            ctx.stroke()
+            if f > 0.95:
+                _poly(ctx, [(s * 175 - 7, 112), (s * 175 + 7, 112), (s * 175, 126)])
+                _fs(ctx, BROWN, 4)
+    if pr > 0.78:                                       # varão central + bandeira
+        f = _back2((pr - 0.78) / 0.22)
+        _st(ctx, 7)
+        ctx.move_to(0, -112)
+        ctx.line_to(0, -112 - 38 * f)
+        ctx.stroke()
+        fl = math.sin(t * 6) * 5
+        ctx.save()
+        ctx.translate(0, -150)
+        ctx.scale(f, f)
+        _poly(ctx, [(0, 0), (40, 10 + fl), (0, 24)])
+        _fs(ctx, YELLOW, 6)
+        ctx.restore()
+
+
+def _back2(x):
+    x = max(0.0, min(1.0, x))
+    return 1 + 2.4 * (x - 1) ** 3 + 1.4 * (x - 1) ** 2
 
 
 def tenda_caida(ctx, t):
@@ -160,9 +202,11 @@ def corda(ctx, t):
             (ctx.move_to if i == 0 else ctx.line_to)(x, y)
     ctx.save()
     ctx.rotate(math.sin(t * 2) * 0.06)
+    loose = 1 + 0.55 * math.exp(-t * 2.6) * math.cos(t * 13)     # a corda aperta com elasticidade
+    ctx.scale(loose, 1 / loose)
     for w, col in ((34, INK), (22, (0.80, 0.62, 0.36))):
         _st(ctx, w, col)
-        path(0.55, 2 * math.pi - 0.55 + math.pi * 0 )
+        path(0.55, 2 * math.pi - 0.55)
         ctx.stroke()
     for w, col in ((34, INK), (22, (0.80, 0.62, 0.36))):  # por cima no cruzamento
         _st(ctx, w, col)
@@ -277,34 +321,6 @@ def bussola(ctx, t):
     _fs(ctx, INK, 3)
 
 
-def trinta_e_cinco(ctx, t):
-    ctx.save()
-    ctx.rotate(t * 0.25)
-    for k in range(16):
-        a = k * math.pi / 8
-        _st(ctx, 9, YELLOW)
-        ctx.move_to(math.cos(a) * 128, math.sin(a) * 128)
-        ctx.line_to(math.cos(a) * 158, math.sin(a) * 158)
-        ctx.stroke()
-    ctx.restore()
-    ctx.arc(0, 0, 118, 0, 2 * math.pi)
-    _fs(ctx, GREEN, 11)
-    ctx.arc(0, 0, 100, 0, 2 * math.pi)
-    _st(ctx, 6, YELLOW)
-    ctx.stroke()
-    ctx.select_font_face(FONT, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-    ctx.set_font_size(112)
-    ex = ctx.text_extents("35")
-    ctx.move_to(-ex.width / 2 - ex.x_bearing, 24)
-    ctx.set_source_rgb(*YELLOW)
-    ctx.show_text("35")
-    ctx.set_font_size(30)
-    ex = ctx.text_extents("ANOS")
-    ctx.move_to(-ex.width / 2 - ex.x_bearing, 66)
-    ctx.set_source_rgb(*WHITE)
-    ctx.show_text("ANOS")
-
-
 def pinheiro(ctx, t):
     sw = math.sin(t * 2) * 3
     _st(ctx, 9)
@@ -331,9 +347,131 @@ def texto(ctx, t, label="TEXTO"):
     ctx.stroke()
 
 
+
+def exclamacao(ctx, t):
+    sh = math.sin(t * 28) * 3 * math.exp(-t * 2)
+    ctx.save()
+    ctx.translate(sh, 0)
+    ctx.select_font_face(FONT, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+    ctx.set_font_size(330)
+    e = ctx.text_extents("!")
+    ctx.move_to(-e.width / 2 - e.x_bearing, 120)
+    ctx.text_path("!")
+    ctx.set_source_rgb(*RED)
+    ctx.fill_preserve()
+    _st(ctx, 14)
+    ctx.stroke()
+    ctx.restore()
+    _st(ctx, 10, YELLOW)
+    for k in range(5):
+        a = math.radians(-150 + k * 30)
+        r0, r1 = 150 + 6 * math.sin(t * 9 + k), 195 + 10 * math.sin(t * 9 + k)
+        ctx.move_to(math.cos(a) * r0, 10 + math.sin(a) * r0)
+        ctx.line_to(math.cos(a) * r1, 10 + math.sin(a) * r1)
+    ctx.stroke()
+
+
+def estrelas(ctx, t):
+    k = _ease(t / 0.55)
+    for i in range(5):
+        a = -math.pi / 2 + i * 2 * math.pi / 5 + t * 0.6
+        r = 105 * k
+        ctx.save()
+        ctx.translate(math.cos(a) * r, math.sin(a) * r)
+        ctx.rotate(t * 2 + i)
+        sc = 0.75 + 0.25 * math.sin(t * 7 + i)
+        ctx.scale(sc, sc)
+        _star5(ctx, 0, 0, 46)
+        _fs(ctx, YELLOW, 7)
+        ctx.restore()
+    _star5(ctx, 0, 0, 62 * k)
+    _fs(ctx, YELLOW, 8)
+
+
+def _star5(ctx, x, y, r):
+    ctx.new_path()
+    pts = []
+    for k in range(10):
+        a = -math.pi / 2 + k * math.pi / 5
+        rr = r if k % 2 == 0 else r * 0.45
+        pts.append((x + math.cos(a) * rr, y + math.sin(a) * rr))
+    _poly(ctx, pts)
+
+
+def logo(ctx, t):
+    """Logótipo oficial com brilho: raios rotativos, halo, reflexo a deslizar e cintilações."""
+    ctx.save()
+    ctx.rotate(t * 0.35)
+    for k in range(18):
+        a = k * math.pi / 9
+        _st(ctx, 12, YELLOW, 0.85)
+        r0, r1 = 178, 178 + (26 if k % 2 else 44) + 8 * math.sin(t * 5 + k)
+        ctx.move_to(math.cos(a) * r0, math.sin(a) * r0)
+        ctx.line_to(math.cos(a) * r1, math.sin(a) * r1)
+        ctx.stroke()
+    ctx.restore()
+    g = cairo.RadialGradient(0, 0, 60, 0, 0, 190)
+    g.add_color_stop_rgba(0, 1, 1, 0.9, 0.95)
+    g.add_color_stop_rgba(1, *YELLOW, 0)
+    ctx.set_source(g)
+    ctx.arc(0, 0, 190, 0, 2 * math.pi)
+    ctx.fill()
+    _ellipse(ctx, 0, 0, 125, 168)
+    ctx.set_source_rgb(1, 1, 1)
+    ctx.fill_preserve()
+    _st(ctx, 8, INK, 0.9)
+    ctx.stroke()
+    if LOGO is not None:
+        h = 300.0
+        k = h / LOGO.get_height()
+        ctx.save()
+        ctx.scale(k, k)
+        ctx.push_group()
+        ctx.set_source_surface(LOGO, -LOGO.get_width() / 2, -LOGO.get_height() / 2)
+        ctx.get_source().set_filter(cairo.FILTER_BEST)
+        ctx.paint()
+        ctx.set_operator(cairo.OPERATOR_ATOP)            # reflexo apenas sobre os pixels do logótipo
+        ph = (t * 0.55) % 1.6 - 0.3
+        sx = (ph - 0.5) * 2.6 * LOGO.get_width()
+        gl = cairo.LinearGradient(sx - 30, -80, sx + 30, 80)
+        gl.add_color_stop_rgba(0, 1, 1, 1, 0)
+        gl.add_color_stop_rgba(0.5, 1, 1, 1, 0.85)
+        gl.add_color_stop_rgba(1, 1, 1, 1, 0)
+        ctx.set_source(gl)
+        ctx.paint()
+        ctx.pop_group_to_source()
+        ctx.paint()
+        ctx.restore()
+    for i, (x, y, ph) in enumerate(((-120, -140, 0), (125, -80, 1.3), (95, 150, 2.4))):    # cintilações
+        a = max(0.0, math.sin(t * 4 + ph))
+        ctx.save()
+        ctx.translate(x, y)
+        ctx.rotate(t)
+        ctx.scale(0.4 + 0.6 * a, 0.4 + 0.6 * a)
+        ctx.move_to(0, -26)
+        for q in range(4):
+            ang = q * math.pi / 2
+            ctx.line_to(math.sin(ang + math.pi / 4) * 7, -math.cos(ang + math.pi / 4) * 7)
+            ctx.line_to(math.sin(ang + math.pi / 2) * 26, -math.cos(ang + math.pi / 2) * 26)
+        ctx.close_path()
+        ctx.set_source_rgba(1, 1, 1, 0.95)
+        ctx.fill_preserve()
+        _st(ctx, 3, YELLOW)
+        ctx.stroke()
+        ctx.restore()
+
+
+def _ellipse(ctx, cx, cy, rx, ry):
+    ctx.save()
+    ctx.translate(cx, cy)
+    ctx.scale(rx, ry)
+    ctx.arc(0, 0, 1, 0, 2 * math.pi)
+    ctx.restore()
+
+
 PROPS = {"tenda": tenda, "tenda_caida": tenda_caida, "fogueira": fogueira, "corda": corda, "no": corda,
          "mochila": mochila, "seta": seta, "lenco": lenco, "estrela": estrela, "bussola": bussola,
-         "35": trinta_e_cinco, "pinheiro": pinheiro, "arvore": pinheiro}
+         "pinheiro": pinheiro, "exclamacao": exclamacao, "estrelas": estrelas, "logo": logo, "arvore": pinheiro}
 
 
 def _back(x):
@@ -342,7 +480,11 @@ def _back(x):
 
 
 def draw_prop(ctx, name, x, y, size, age, seed=0, shrink=None):
-    """Desenha um ícone com animação de entrada «pop». `shrink` (0..1) faz a saída."""
+    """Desenha um ícone com animação «pop» (elástica) e sombra suave. `nome@1.3` = 30% maior."""
+    scale_mult = 1.0
+    if "@" in name and not name.lower().startswith("texto:"):
+        name, m = name.split("@", 1)
+        scale_mult = float(m)
     key = _norm(name)
     if key.startswith("texto:"):
         fn = lambda c, tt: texto(c, tt, name.split(":", 1)[1].strip())
@@ -355,9 +497,24 @@ def draw_prop(ctx, name, x, y, size, age, seed=0, shrink=None):
     else:
         if age < 0:
             return
-        s = _back(min(age / 0.38, 1.0))
+        s = _back(min(age / 0.45, 1.0))
+    size *= scale_mult
+    if abs(s) < 0.004:
+        return
     ctx.save()
-    ctx.translate(x, y + math.sin(age * 2.0 + seed) * 4)
+    bob = math.sin(age * 2.0 + seed) * 5
+    # sombra no «chão» por baixo do ícone
+    ctx.save()
+    ctx.translate(x, y + size * 0.50)
+    ctx.scale(size * 0.36 * s * (1 - bob / 90), size * 0.05 * s)
+    g = cairo.RadialGradient(0, 0, 0, 0, 0, 1)
+    g.add_color_stop_rgba(0, 0, 0, 0, 0.22)
+    g.add_color_stop_rgba(1, 0, 0, 0, 0)
+    ctx.set_source(g)
+    ctx.arc(0, 0, 1, 0, 2 * math.pi)
+    ctx.fill()
+    ctx.restore()
+    ctx.translate(x, y + bob)
     ctx.rotate(math.sin(age * 1.5 + seed) * 0.025)
     ctx.scale(size / 300 * s, size / 300 * s)
     fn(ctx, max(age, 0))
