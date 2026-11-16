@@ -1,0 +1,4 @@
+edge-tts>=7.0
+pycairo>=1.25
+numpy>=1.24
+imageio-ffmpeg>=0.4   # traz um ffmpeg próprio se não tiveres um instalado

@@ -1,0 +1,397 @@
+{
+ "titulo": "Episódio 01 — O Tiko apresenta-se",
+ "duracao": 24.5,
+ "blocos": [
+  {
+   "texto": "Olá, *Caxinas*! Eu sou o *Tiko*, escuteiro veterano!",
+   "estado": "saudacao",
+   "inicio": 0.35,
+   "fim": 3.94,
+   "palavras": [
+    {
+     "texto": "Olá,",
+     "t0": 0.35,
+     "t1": 0.651
+    },
+    {
+     "texto": "Caxinas!",
+     "t0": 0.853,
+     "t1": 1.401
+    },
+    {
+     "texto": "Eu",
+     "t0": 2.28,
+     "t1": 2.387
+    },
+    {
+     "texto": "sou",
+     "t0": 2.399,
+     "t1": 2.518
+    },
+    {
+     "texto": "o",
+     "t0": 2.565,
+     "t1": 2.645
+    },
+    {
+     "texto": "Tiko,",
+     "t0": 2.637,
+     "t1": 2.899
+    },
+    {
+     "texto": "escuteiro",
+     "t0": 3.053,
+     "t1": 3.41
+    },
+    {
+     "texto": "veterano!",
+     "t0": 3.422,
+     "t1": 3.875
+    }
+   ]
+  },
+  {
+   "texto": "Este *lenço* verde não serve para assoar o nariz. É a minha *identidade*!",
+   "estado": "normal",
+   "inicio": 4.16,
+   "fim": 7.93,
+   "palavras": [
+    {
+     "texto": "Este",
+     "t0": 4.16,
+     "t1": 4.351
+    },
+    {
+     "texto": "lenço",
+     "t0": 4.386,
+     "t1": 4.624
+    },
+    {
+     "texto": "verde",
+     "t0": 4.636,
+     "t1": 4.862
+    },
+    {
+     "texto": "não",
+     "t0": 4.874,
+     "t1": 4.993
+    },
+    {
+     "texto": "serve",
+     "t0": 5.017,
+     "t1": 5.279
+    },
+    {
+     "texto": "para",
+     "t0": 5.303,
+     "t1": 5.422
+    },
+    {
+     "texto": "assoar",
+     "t0": 5.422,
+     "t1": 5.684
+    },
+    {
+     "texto": "o",
+     "t0": 5.696,
+     "t1": 5.776
+    },
+    {
+     "texto": "nariz.",
+     "t0": 5.743,
+     "t1": 6.172
+    },
+    {
+     "texto": "É",
+     "t0": 7.062,
+     "t1": 7.158
+    },
+    {
+     "texto": "a",
+     "t0": 7.182,
+     "t1": 7.262
+    },
+    {
+     "texto": "minha",
+     "t0": 7.217,
+     "t1": 7.348
+    },
+    {
+     "texto": "identidade!",
+     "t0": 7.348,
+     "t1": 7.93
+    }
+   ]
+  },
+  {
+   "texto": "Este ano o agrupamento faz **35 anos**, e eu estou *super* entusiasmado!",
+   "estado": "entusiasmado",
+   "inicio": 8.15,
+   "fim": 11.57,
+   "palavras": [
+    {
+     "texto": "Este",
+     "t0": 8.15,
+     "t1": 8.403
+    },
+    {
+     "texto": "ano",
+     "t0": 8.427,
+     "t1": 8.57
+    },
+    {
+     "texto": "o",
+     "t0": 8.57,
+     "t1": 8.65
+    },
+    {
+     "texto": "agrupamento",
+     "t0": 8.594,
+     "t1": 9.058
+    },
+    {
+     "texto": "faz",
+     "t0": 9.094,
+     "t1": 9.249
+    },
+    {
+     "texto": "35",
+     "t0": 9.296,
+     "t1": 9.772
+    },
+    {
+     "texto": "anos,",
+     "t0": 9.796,
+     "t1": 10.082
+    },
+    {
+     "texto": "e",
+     "t0": 10.344,
+     "t1": 10.424
+    },
+    {
+     "texto": "eu",
+     "t0": 10.427,
+     "t1": 10.507
+    },
+    {
+     "texto": "estou",
+     "t0": 10.487,
+     "t1": 10.665
+    },
+    {
+     "texto": "super",
+     "t0": 10.701,
+     "t1": 10.927
+    },
+    {
+     "texto": "entusiasmado!",
+     "t0": 10.927,
+     "t1": 11.57
+    }
+   ]
+  },
+  {
+   "texto": "Vou ensinar-vos a montar uma *tenda*... mas onde é que eu deixei o *manual*?",
+   "estado": "confuso",
+   "inicio": 11.79,
+   "fim": 14.7,
+   "palavras": [
+    {
+     "texto": "Vou",
+     "t0": 11.79,
+     "t1": 11.92
+    },
+    {
+     "texto": "ensinar-vos",
+     "t0": 11.968,
+     "t1": 12.432
+    },
+    {
+     "texto": "a",
+     "t0": 12.432,
+     "t1": 12.512
+    },
+    {
+     "texto": "montar",
+     "t0": 12.48,
+     "t1": 12.754
+    },
+    {
+     "texto": "uma",
+     "t0": 12.766,
+     "t1": 12.909
+    },
+    {
+     "texto": "tenda...",
+     "t0": 12.92,
+     "t1": 13.278
+    },
+    {
+     "texto": "mas",
+     "t0": 13.444,
+     "t1": 13.623
+    },
+    {
+     "texto": "onde",
+     "t0": 13.623,
+     "t1": 13.73
+    },
+    {
+     "texto": "é",
+     "t0": 13.742,
+     "t1": 13.822
+    },
+    {
+     "texto": "que",
+     "t0": 13.825,
+     "t1": 13.905
+    },
+    {
+     "texto": "eu",
+     "t0": 13.885,
+     "t1": 13.965
+    },
+    {
+     "texto": "deixei",
+     "t0": 13.956,
+     "t1": 14.206
+    },
+    {
+     "texto": "o",
+     "t0": 14.242,
+     "t1": 14.322
+    },
+    {
+     "texto": "manual?",
+     "t0": 14.254,
+     "t1": 14.623
+    }
+   ]
+  },
+  {
+   "texto": "Ai! A tenda caiu! Mas está tudo *controlado*!",
+   "estado": "assustado",
+   "inicio": 14.92,
+   "fim": 18.71,
+   "palavras": [
+    {
+     "texto": "Ai!",
+     "t0": 14.92,
+     "t1": 15.126
+    },
+    {
+     "texto": "A",
+     "t0": 16.064,
+     "t1": 16.147
+    },
+    {
+     "texto": "tenda",
+     "t0": 16.171,
+     "t1": 16.397
+    },
+    {
+     "texto": "caiu!",
+     "t0": 16.409,
+     "t1": 16.695
+    },
+    {
+     "texto": "Mas",
+     "t0": 17.6,
+     "t1": 17.742
+    },
+    {
+     "texto": "está",
+     "t0": 17.742,
+     "t1": 17.933
+    },
+    {
+     "texto": "tudo",
+     "t0": 18.004,
+     "t1": 18.159
+    },
+    {
+     "texto": "controlado!",
+     "t0": 18.183,
+     "t1": 18.71
+    }
+   ]
+  },
+  {
+   "texto": "Aqui vais aprender *nós*, *acampamentos* e muita *aventura*!",
+   "estado": "normal",
+   "inicio": 18.93,
+   "fim": 21.53,
+   "palavras": [
+    {
+     "texto": "Aqui",
+     "t0": 18.93,
+     "t1": 19.122
+    },
+    {
+     "texto": "vais",
+     "t0": 19.146,
+     "t1": 19.324
+    },
+    {
+     "texto": "aprender",
+     "t0": 19.336,
+     "t1": 19.634
+    },
+    {
+     "texto": "nós,",
+     "t0": 19.67,
+     "t1": 19.979
+    },
+    {
+     "texto": "acampamentos",
+     "t0": 20.181,
+     "t1": 20.741
+    },
+    {
+     "texto": "e",
+     "t0": 20.741,
+     "t1": 20.821
+    },
+    {
+     "texto": "muita",
+     "t0": 20.8,
+     "t1": 20.991
+    },
+    {
+     "texto": "aventura!",
+     "t0": 21.003,
+     "t1": 21.467
+    }
+   ]
+  },
+  {
+   "texto": "Segue para mais dicas.",
+   "estado": "saudacao",
+   "inicio": 22.15,
+   "fim": 23.33,
+   "palavras": [
+    {
+     "texto": "Segue",
+     "t0": 22.15,
+     "t1": 22.413
+    },
+    {
+     "texto": "para",
+     "t0": 22.449,
+     "t1": 22.568
+    },
+    {
+     "texto": "mais",
+     "t0": 22.592,
+     "t1": 22.806
+    },
+    {
+     "texto": "dicas.",
+     "t0": 22.842,
+     "t1": 23.27
+    }
+   ]
+  }
+ ]
+}
