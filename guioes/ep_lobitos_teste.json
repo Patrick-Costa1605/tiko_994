@@ -1,0 +1,32 @@
+{
+  "titulo": "Teste — Sinais de que há um Lobito lá em casa",
+  "personagem": { "nome": "Tiko" },
+  "traje": "lobito",
+  "marca_dagua": "@994caxinas",
+  "voz": { "nome": "pt-PT-DuarteNeural", "velocidade": "+14%", "tom": "+3Hz" },
+  "pausa_entre_blocos": 0.30,
+  "final_extra": 1.6,
+  "blocos": [
+    { "estado": "entusiasmado", "camara": "punch", "lado": "centro",
+      "texto": "Sinais de que há um *Lobito* lá em casa!",
+      "pagina": { "foto": "capa.jpg", "formato": "h", "titulo": "SINAIS DE UM LOBITO", "rabiscos": ["estrelas"], "legenda": "o bando todo" } },
+    { "estado": "entusiasmado", "lado": "esquerda",
+      "texto": "Um:<break time=\"200ms\"/> não anda. *Corre*. Até para ir à casa de banho.",
+      "pagina": { "foto": "lenco.jpg", "formato": "h", "titulo": ["1", "NÃO ANDA. CORRE!"], "rabiscos": ["linhas"], "legenda": "a caminho do jantar" } },
+    { "estado": "orgulhoso", "lado": "direita",
+      "texto": "Dois:<break time=\"200ms\"/> chega a casa cheio de *lama*... e com um sorriso enorme.",
+      "pagina": { "foto": "pioneirismo.jpg", "formato": "v", "foto_pos": "50% 70%", "titulo": ["2", "CHEGA CHEIO DE LAMA"], "rabiscos": ["lama"], "legenda": "orgulho a sério" } },
+    { "estado": "confuso", "lado": "esquerda",
+      "texto": "Três:<break time=\"200ms\"/> faz *mil perguntas*. O porquê é a palavra preferida.",
+      "pagina": { "foto": "no.jpg", "formato": "v", "foto_pos": "50% 45%", "titulo": ["3", "MIL PERGUNTAS"], "rabiscos": ["interrogacoes"], "legenda": "porquê? porquê?" } },
+    { "estado": "entusiasmado", "lado": "direita",
+      "texto": "Quatro:<break time=\"200ms\"/> inventa um *grito de guerra*. Ninguém pediu.",
+      "pagina": { "foto": "cta.jpg", "formato": "h", "titulo": ["4", "GRITO DE GUERRA"], "rabiscos": ["uivo"], "legenda": "ensaio geral" } },
+    { "estado": "voluntario", "lado": "esquerda",
+      "texto": "Cinco:<break time=\"200ms\"/> diz *eu ajudo!* antes de saber do quê. É a **Melhor Vontade**.",
+      "pagina": { "foto": "seccoes.jpg", "formato": "h", "titulo": ["5", "EU AJUDO!"], "rabiscos": ["coracoes"], "legenda": "voluntário!" } },
+    { "estado": "saudacao", "camara": "punch", "lado": "direita",
+      "texto": "Reconheceste?<break time=\"250ms\"/> *Marca* quem tem seis a dez anos. E vem experimentar um *sábado* nas Caxinas!",
+      "pagina": { "foto": "fogo_conselho.jpg", "formato": "v", "foto_pos": "50% 60%", "titulo": "MARCA QUEM RECONHECES", "rabiscos": ["estrelas"], "legenda": "até sábado!", "fita2": true } }
+  ]
+}
