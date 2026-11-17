@@ -14,7 +14,6 @@ SH_X, SH_Y = 82, -405
 HIP_Y = -215
 L1, L2 = 150, 140
 LOGO = None          # superfície cairo do logótipo (definida pela cena)
-TRAJE = None         # "lobito" = capuz de lobo (definido pela cena)
 
 # ---- poses / emoções (todos os valores são numéricos => interpoláveis entre blocos)
 # brl/brr = sobrancelha esq./dir. (y px, negativo sobe | a graus, + = ponta interior sobe)
@@ -35,9 +34,6 @@ POSES = {
                       surprise=0.8),
     "saudacao": dict(BASE, brl_y=-10, brr_y=-12, brl_a=4, brr_a=4, smile=0.9, cheeks=0.6,
                      rhx=190, rhy=-215, salute=1, lhx=-170, lhy=110, gest=0.12),
-    "apresenta": dict(BASE, brl_y=-8, brr_y=-8, smile=0.85, cheeks=0.3, rhx=215, rhy=-110, lhx=-175, lhy=90, gest=0.5),
-    "voluntario": dict(BASE, brl_y=-14, brr_y=-14, smile=1.0, eye=1.08, sparkle=0.6, cheeks=0.7, rhx=78, rhy=-300,
-                       lhx=-170, lhy=100, gest=0.3, bounce=0.35),
     "orgulhoso": dict(BASE, brl_y=-8, brr_y=-8, brl_a=-4, brr_a=-4, smile=0.85, cheeks=0.5, tilt=-4,
                       rhx=14, rhy=12, lhx=-150, lhy=60, gest=0.2, lean=1, looky=-0.15, sparkle=0.4),
 }
@@ -376,28 +372,6 @@ def _draw_brows(ctx, p):
 def _draw_head(ctx, t, p, mo, vow, hat):
     ctx.save()
     ctx.translate(*HEAD_C)
-    if TRAJE == "lobito":
-        hood = (0.50, 0.32, 0.20)
-        for s in (-1, 1):
-            ctx.move_to(s * 0.88 * HRX, -0.62 * HRY)
-            ctx.line_to(s * 0.74 * HRX, -1.62 * HRY)
-            ctx.line_to(s * 0.18 * HRX, -1.0 * HRY)
-            ctx.close_path()
-            ctx.set_source_rgb(*hood)
-            ctx.fill_preserve()
-            _st(ctx, 9)
-            ctx.stroke()
-            ctx.move_to(s * 0.78 * HRX, -0.76 * HRY)
-            ctx.line_to(s * 0.71 * HRX, -1.34 * HRY)
-            ctx.line_to(s * 0.34 * HRX, -0.98 * HRY)
-            ctx.close_path()
-            ctx.set_source_rgb(*PINK)
-            ctx.fill()
-        _ellipse(ctx, 0, 0, HRX * 1.15, HRY * 1.15)
-        ctx.set_source_rgb(*hood)
-        ctx.fill_preserve()
-        _st(ctx, 10)
-        ctx.stroke()
     for s in (-1, 1):                                     # orelhas
         _ellipse(ctx, s * (HRX - 2), 8, 22, 26)
         _fs(ctx, SKIN_SHADE, 7)
@@ -423,15 +397,6 @@ def _draw_head(ctx, t, p, mo, vow, hat):
     _ellipse(ctx, 0, 0, HRX, HRY)
     _st(ctx, 10)
     ctx.stroke()
-    if TRAJE == "lobito":
-        ctx.save()
-        ctx.scale(HRX * 0.97, HRY * 0.97)
-        ctx.arc(0, 0, 1, math.pi, 2 * math.pi)
-        ctx.set_source_rgb(0.98, 0.93, 0.82)
-        ctx.set_line_width(0.30)
-        ctx.set_line_cap(cairo.LINE_CAP_ROUND)
-        ctx.stroke()
-        ctx.restore()
     if p["cheeks"] > 0.02:
         for s in (-1, 1):
             _ellipse(ctx, s * 88, 40, 20, 13)

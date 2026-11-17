@@ -6,7 +6,6 @@ import cairo
 
 import character
 import props
-from album import Album
 from background import draw_parallax, make_texture
 from character import clamp, draw_tiko, ease, tiko_dx
 from config import *
@@ -99,11 +98,6 @@ class Renderer:
         self.ctx = cairo.Context(self.surface)
         self.starts = [b["vstart"] for b in tl["blocks"]]
         self.sub_cache = {}
-        if tl.get("traje") == "lobito":                 # capuz de lobo + lenço amarelo com debrum verde
-            character.TRAJE = "lobito"
-            character.SCARF, character.SCARF_DARK = mix(LOGO_YELLOW, BLACK, 0.12), mix(LOGO_YELLOW, BLACK, 0.5)
-            character.SCARF_LIGHT, character.TRIM = mix(LOGO_YELLOW, WHITE, 0.35), LOGO_GREEN
-        self.album = Album(tl, self.tex) if tl.get("album") else None
 
     def render(self, f):
         tl, ctx = self.tl, self.ctx
@@ -118,13 +112,10 @@ class Renderer:
         ctx.translate(cx, cy)
         ctx.scale(z, z)
         ctx.translate(-cx, -cy)
-        if self.album:
-            self.album.draw(ctx, t)
-        else:
-            ctx.set_source_surface(self.tex, 0, 0)
-            ctx.paint()
-            draw_parallax(ctx, t)
-            draw_props(ctx, blk, prev, t)
+        ctx.set_source_surface(self.tex, 0, 0)
+        ctx.paint()
+        draw_parallax(ctx, t)
+        draw_props(ctx, blk, prev, t)
         sc = tl["scarf"][f]
         draw_tiko(ctx, t, tl["blocks"], float(tl["mouth_o"][f]), float(tl["mouth_v"][f]),
                   (float(sc[0]), float(sc[1]), float(sc[2])), hat=tl["chapeu"])

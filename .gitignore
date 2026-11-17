@@ -2,8 +2,3 @@ __pycache__/
 *.pyc
 output/frames/
 .venv/
-
-# fotos de crianças e vídeos de teste com fotos: fora do git (repositório público)
-assets/fotos/
-output/*_foto*
-output/ep_lobitos*

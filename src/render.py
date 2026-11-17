@@ -115,15 +115,13 @@ def build_timeline(script_path, hat=None):
             cursor = end + pause
         props = norm_props(rb.get("ilustracao"))
         lado = rb.get("lado", "esquerda" if props else "centro")
-        album_dx = (235 if lado == "direita" else -235 if lado == "esquerda" else 0) if rb.get("pagina") else None
         cam = rb.get("camara", "normal")
         pts = [start + 0.05] if cam == "punch" else []
         pts += [start + float(s) for s in rb.get("punches", [])]
         blocks.append({
             "texto": " ".join(p for p, _ in pieces), "estado": rb.get("estado", "normal"), "props": props,
             "start": start, "end": end, "words": words_all, "chunks": make_chunks(words_all), "method": method,
-            "camara": cam, "punches": pts, "tiko_dx": album_dx if album_dx is not None else LADO[lado], "sfx": rb.get("sfx", []),
-            "pagina": rb.get("pagina"),
+            "camara": cam, "punches": pts, "tiko_dx": LADO[lado], "sfx": rb.get("sfx", []),
         })
         t = end + float(rb.get("pausa_depois", gap))
 
@@ -169,14 +167,6 @@ def build_timeline(script_path, hat=None):
         for s in b["sfx"]:
             s = {"tipo": s} if isinstance(s, str) else s
             sfx.append((b["start"] + float(s.get("em", 0)), s["tipo"], float(s.get("ganho", 0.8))))
-    for i, b in enumerate(blocks):                     # álbum: virar de página, fotos a surgir, rabiscos
-        if not b.get("pagina"):
-            continue
-        if i > 0:
-            sfx.append((b["vstart"] - 0.10, "whoosh", 0.45))
-        sfx.append((b["vstart"] + 0.12, "pop", 0.7))
-        for r in b["pagina"].get("rabiscos", []):
-            sfx.append((b["vstart"] + 0.55, {"lama": "boing", "estrelas": "ding", "uivo": "boing"}.get(r, "tick"), 0.6))
     fx = np.zeros_like(voice)
     for tt, name, g in sfx:
         add_sfx(fx, name, tt, g)
@@ -189,8 +179,7 @@ def build_timeline(script_path, hat=None):
         "fps": FPS, "total": total, "n_frames": n_frames, "blocks": blocks, "mouth_o": mo, "mouth_v": mv,
         "punches": sorted(p for b in blocks for p in b["punches"]),
         "watermark": cfg.get("marca_dagua", "@994caxinas"),
-        "chapeu": (cfg.get("personagem", {}).get("chapeu", True) and cfg.get("traje") != "lobito") if hat is None else hat,
-        "traje": cfg.get("traje"), "album": any(b.get("pagina") for b in blocks),
+        "chapeu": cfg.get("personagem", {}).get("chapeu", True) if hat is None else hat,
         "titulo": cfg.get("titulo", ""),
     }
     tl["scarf"] = simulate_scarf(tl)
