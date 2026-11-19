@@ -88,7 +88,7 @@ def agenda(elems, t_ini, t_fim, palavras):
             cur += d + 0.05
         return out, cur
 
-    lo, hi = 0.45, 1.9
+    lo, hi = 0.25, 1.9
     for _ in range(14):
         mid = (lo + hi) / 2
         _, fim = corre(mid)

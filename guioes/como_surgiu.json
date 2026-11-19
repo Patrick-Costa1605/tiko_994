@@ -16,50 +16,39 @@
     "27": "vinte e sete",
     "100": "cem",
     "6": "seis",
-    "22": "vinte e dois"
+    "22": "vinte e dois",
+    "35": "trinta e cinco"
   },
   "blocos": [
     {
       "cena": "gancho",
       "velocidade": "+5%",
       "tom": "+3Hz",
-      "texto": "Como nasce um agrupamento de escuteiros, numa terra de pescadores?",
-      "legenda_n": 4
+      "legenda_n": 4,
+      "texto": "Como nasce um agrupamento de escuteiros, numa terra de pescadores?"
     },
     {
       "cena": "caxinas",
-      "texto": "Entre o mar e a fé, as Caxinas guardam histórias de pescadores. É aqui que começa a nossa história."
+      "texto": "Entre o mar e a fé, num sítio onde até a igreja tem forma de barco, nasce esta história."
     },
     {
-      "cena": "escutismo",
-      "texto": "O Escutismo é mais antigo: foi fundado em 1907, em Inglaterra, por Baden-Powell."
-    },
-    {
-      "cena": "portugal",
-      "texto": "Em Portugal, o Corpo Nacional de Escutas nasceu em Braga, a 27 de maio de 1923."
-    },
-    {
-      "cena": "noventa_e_um",
-      "texto": "E nas Caxinas? Em 1991, por iniciativa do Monsenhor Domingos de Araújo, nasceu o Agrupamento 994."
+      "cena": "viagem",
+      "texto": "O Escutismo nasceu em 1907, com Baden-Powell. Em 1923, nasceu em Braga o Corpo Nacional de Escutas. E em 1991, por iniciativa do Monsenhor Domingos de Araújo, nasceu aqui o Agrupamento 994."
     },
     {
       "cena": "chefes",
-      "texto": "O primeiro Chefe de Agrupamento foi o Miguel Fernandes de Castro. Seguiu-se o Milton Fernandes de Castro, e desde 2022 lidera o Albertino Arteiro."
+      "texto": "O testemunho passou de mão em mão. O primeiro Chefe de Agrupamento foi o Miguel Fernandes de Castro. Seguiu-se o Milton, e desde 2022 lidera o Albertino Arteiro."
     },
     {
       "cena": "hoje",
-      "texto": "Hoje são quatro secções, dos 6 aos 22 anos, a formar jovens desde 1991."
-    },
-    {
-      "cena": "missao",
-      "texto": "A missão é a mesma: servir, crescer ao ar livre e viver a fraternidade."
+      "texto": "Dos 6 aos 22 anos, crescemos em quatro secções: Lobitos, Exploradores, Pioneiros e Caminheiros, a aprender e a servir."
     },
     {
       "cena": "fim",
       "folga": 1.2,
-      "texto": "Esta é a nossa história, e continua a escrever-se. Sempre Alerta!",
-      "legenda_n": -2
+      "legenda_n": -2,
+      "texto": "São 35 anos a formar jovens e a escrever esta história, e ainda há espaço na folha para ti. Sempre Alerta!"
     }
   ],
-  "legenda": "Como surgiu o Escutismo nas Caxinas, desenhado em tempo real. ✏️\nO Escutismo foi fundado em 1907, em Inglaterra, por Baden-Powell. O Corpo Nacional de Escutas nasceu em Braga, em 1923. E o Agrupamento 994 nasceu nas Caxinas em 1991, por iniciativa do Monsenhor Domingos de Araújo.\n\nHoje são 4 secções, dos 6 aos 22 anos, a formar jovens desde 1991. Sempre Alerta!\n\n📞 924 428 343 · ✉️ geral.994@escutismo.pt · 🌐 994caxinas.com\n\n#escutismo #994caxinas #escuteiros #caxinas #viladoconde #sempreAlerta"
+  "legenda": "Como surgiu o Escutismo nas Caxinas, desenhado em tempo real. ✏️\n35 anos a formar jovens nas Caxinas: o Escutismo nasceu em 1907, com Baden-Powell; o Corpo Nacional de Escutas nasceu em Braga, em 1923; e o Agrupamento 994 nasceu nas Caxinas em 1991, por iniciativa do Monsenhor Domingos de Araújo.\n\nQuatro secções, dos 6 aos 22 anos — e ainda há espaço na folha para ti. Sempre Alerta!\n\n📞 924 428 343 · ✉️ geral.994@escutismo.pt · 🌐 994caxinas.com\n\n#escutismo #994caxinas #escuteiros #caxinas #viladoconde #sempreAlerta"
 }
