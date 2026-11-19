@@ -8,6 +8,20 @@ from desenho import *
 L = AREA[1]          # topo da zona de desenho
 
 
+def gancho():
+    """Abertura: uma pergunta enorme, a mão a riscar depressa e as palavras-chave com marcador amarelo."""
+    E = []
+    ponto = catmull([(360, 560), (372, 450), (460, 372), (570, 380), (652, 452), (640, 548), (570, 618), (528, 690), (526, 770)], n=12)
+    E.append(caminho(ponto, VERMELHO, 38, seed=200, peso=1.6, tremor=2.2))
+    E.append(caminho(circulo(526, 880, 30, 5), VERMELHO, 12, fill=VERMELHO, fa=1, fechado=True, seed=201, peso=0.4))
+    E.append(caminho([(130, 1030), (950, 1010)], AMARELO, 120, seed=202, peso=0.7, ancora="agrupamento", tremor=1.0))
+    E.append(texto("ESCUTEIROS", 540, 1075, 164, VERDE, peso=1.2, ancora="agrupamento"))
+    E.append(texto("numa terra de", 540, 1185, 84, INK, peso=0.9, ancora="numa"))
+    E.append(caminho([(200, 1330), (890, 1316)], AMARELO, 130, seed=203, peso=0.7, ancora="pescadores", tremor=1.0))
+    E.append(texto("PESCADORES", 540, 1380, 164, AZUL, peso=1.2, ancora="pescadores"))
+    return E
+
+
 def caxinas():
     E = [texto("CAXINAS", 540, 350, 200, VERDE, peso=1.2),
          texto("Vila do Conde", 540, 440, 64, INK, peso=0.8)]
@@ -153,5 +167,5 @@ def fim():
     return E
 
 
-CENAS = {"caxinas": lambda p: caxinas(), "escutismo": lambda p: escutismo(), "portugal": lambda p: portugal(),
+CENAS = {"gancho": lambda p: gancho(), "caxinas": lambda p: caxinas(), "escutismo": lambda p: escutismo(), "portugal": lambda p: portugal(),
          "noventa_e_um": lambda p: noventa_e_um(), "chefes": chefes, "hoje": lambda p: hoje(), "missao": lambda p: missao(), "fim": lambda p: fim()}

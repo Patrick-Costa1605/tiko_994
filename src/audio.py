@@ -70,3 +70,16 @@ def folha(dur=0.55):
     x = _mov(np.concatenate([x, np.zeros(10, np.float32)]), 6)[:n]
     t = np.arange(n) / SR
     return (x * np.sin(np.pi * t / dur) ** 1.6 * 0.5).astype(np.float32)
+
+
+def tratar_voz(x):
+    """Torna a voz sintética menos seca: passa-alto, calor nos graves, compressão suave e uma sala muito curta."""
+    af = ("highpass=f=85,equalizer=f=180:t=q:w=1.0:g=2.5,equalizer=f=3200:t=q:w=1.2:g=-1.5,"
+          "acompressor=threshold=0.09:ratio=2.6:attack=8:release=140:makeup=1.6,"
+          "aecho=0.88:0.55:19|41:0.16|0.09")
+    out = subprocess.run([ffmpeg_exe(), "-v", "error", "-f", "f32le", "-ar", str(SR), "-ac", "1", "-i", "-", "-af", af, "-f", "f32le", "-ar", str(SR), "-ac", "1", "-"],
+                         input=x.astype(np.float32).tobytes(), check=True, capture_output=True).stdout
+    y = np.frombuffer(out, dtype=np.float32).copy()
+    if len(y) < len(x):
+        y = np.concatenate([y, np.zeros(len(x) - len(y), np.float32)])
+    return y[: len(x)]

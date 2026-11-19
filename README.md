@@ -1,6 +1,6 @@
 # Como surgiu o Escutismo nas Caxinas — vídeo desenhado à mão em tempo real
 
-Um Reel (1080×1920, 30 fps, ~64 s) em que uma mão desenha, com marcador sobre papel, a história do Agrupamento 994 – Caxinas,
+Um Reel (1080×1920, 30 fps, ~81 s) em que uma mão desenha, com marcador sobre papel, a história do Agrupamento 994 – Caxinas,
 ao ritmo da voz (pt-PT). Tudo é gerado por código: os traços, a mão, as legendas e o som do marcador.
 
 ```bash
@@ -9,6 +9,13 @@ python src/render.py guioes/como_surgiu.json              # -> output/como_surgi
 python src/render.py guioes/como_surgiu.json --png 6 20   # só imagens de teste (segundos)
 ```
 Voz: `edge-tts` (`pt-PT-DuarteNeural`), precisa de acesso a speech.platform.bing.com. Fonte: Chewy (em `assets/fonts/`; instala-a no sistema).
+
+## Ritmo e som
+- **Abertura:** uma pergunta enorme («Como nasce um agrupamento de escuteiros, numa terra de pescadores?») com o «?» a vermelho e marcador amarelo.
+- **Páginas:** cada página fica parada ~1,2 s depois da fala e o caderno desliza em 0,85 s (`SLIDE`, `GAP_PAG` em `src/render.py`).
+- **Voz:** uma síntese por frase (entoação mais natural) com pausas, mais calma (-2%), e um tratamento leve (graves, compressão, sala curta).
+- **Música:** original, gerada por `src/musica.py` (ukulele em Dó maior, baixo, almofada e shaker); baixa sozinha sob a voz.
+- **Lápis e página:** quase impercetíveis (~25 dB e ~14 dB abaixo da voz); a mistura é normalizada de forma linear.
 
 ## Como funciona
 - `guioes/como_surgiu.json`: os blocos de fala (texto + `cena`). `pronuncia` diz como ler números (1991 → «mil novecentos e noventa e um»).

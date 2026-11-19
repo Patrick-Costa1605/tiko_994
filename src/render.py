@@ -9,6 +9,7 @@ import bisect
 import json
 import math
 import multiprocessing as mp
+import re
 import subprocess
 import sys
 import time
@@ -19,14 +20,17 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from audio import SR, decode, ffmpeg_exe, folha, risco, trim_silence, write_wav  # noqa: E402
+from audio import SR, decode, ffmpeg_exe, folha, risco, tratar_voz, trim_silence, write_wav  # noqa: E402
+from musica import gerar as gerar_musica  # noqa: E402
 from cenas import CENAS  # noqa: E402
 from config import *  # noqa: E402
 from desenho import clamp, desenha_elemento, desenha_mao, ease, largura_texto, ponto_em, h01  # noqa: E402
 from voz import falado, norm, sintetizar, silabas  # noqa: E402
 
-SLIDE = 0.6                    # duração do virar de página
-GAP_PAG, GAP_CONT = 0.95, 0.40
+SLIDE = 0.85                   # duração do virar de página
+PRE = 0.30                     # a página nova fica visível 0,3 s antes de a voz e a mão começarem
+GAP_PAG, GAP_CONT = 2.3, 0.75  # pausa entre páginas (a página anterior fica parada ~1,2 s para se ler)
+PAUSA_FRASE = 0.30
 
 
 # ------------------------------------------------------------------ guião -> tempos
@@ -99,23 +103,29 @@ def construir(caminho_guiao):
     cfg = json.loads(Path(caminho_guiao).read_text(encoding="utf-8"))
     voz, pron = cfg["voz"], cfg.get("pronuncia", {})
     blocos, partes = [], []
-    cur = 0.7
+    cur = 0.35
     for i, rb in enumerate(cfg["blocos"]):
-        spoken = " ".join(falado(w, pron) for w in rb["texto"].split())
-        mp3, pal = sintetizar(spoken, voz["nome"], voz["velocidade"], voz["tom"])
-        x, off = trim_silence(decode(mp3))
-        dur = len(x) / SR
         nova = i > 0 and not rb.get("continua")
         start = cur if i == 0 else cur + (GAP_PAG if nova else GAP_CONT)
-        ws = palavras_do_bloco(rb["texto"], pron, pal, dur, off)
-        for w in ws:
-            w["t0"] += start
-            w["t1"] += start
-        partes.append((start, x))
-        blocos.append({"cena": rb["cena"], "parte": rb.get("parte"), "nova": nova or i == 0, "start": start, "end": start + dur, "words": ws,
-                       "folga": rb.get("folga", 0.45 if (i + 1 < len(cfg["blocos"]) and not cfg["blocos"][i + 1].get("continua")) else 0.2), "texto": rb["texto"]})
-        cur = start + dur
-    total = blocos[-1]["end"] + 2.2
+        frases = re.split(r"(?<=[.!?])\s+", rb["texto"].strip())
+        ws, x_all, t_loc = [], [], 0.0
+        for fr in frases:                                     # uma síntese por frase: entoação mais natural, pausas controladas
+            spoken = " ".join(falado(w, pron) for w in fr.split())
+            mp3, pal = sintetizar(spoken, voz["nome"], rb.get("velocidade", voz["velocidade"]), rb.get("tom", voz["tom"]))
+            x, off = trim_silence(decode(mp3))
+            dur = len(x) / SR
+            for w in palavras_do_bloco(fr, pron, pal, dur, off):
+                w["t0"] += start + t_loc
+                w["t1"] += start + t_loc
+                ws.append(w)
+            partes.append((start + t_loc, x))
+            t_loc += dur + (PAUSA_FRASE + (0.12 if fr.endswith("?") else 0.0))
+        end = start + t_loc - PAUSA_FRASE
+        blocos.append({"cena": rb["cena"], "parte": rb.get("parte"), "nova": nova or i == 0, "start": start, "end": end, "words": ws,
+                       "folga": rb.get("folga", 0.45 if (i + 1 < len(cfg["blocos"]) and not cfg["blocos"][i + 1].get("continua")) else 0.2),
+                       "texto": rb["texto"]})
+        cur = end
+    total = blocos[-1]["end"] + 3.0
 
     # páginas e elementos agendados
     paginas = []
@@ -138,19 +148,20 @@ def mistura(tl, partes):
     for start, x in partes:
         a = int(start * SR)
         voz[a:a + len(x)] += x
+    voz = tratar_voz(voz)                                      # compressão suave, brilho e uma pitada de sala
     fx = np.zeros(n, np.float32)
-    for k, (t0, t1, e, pg) in enumerate(tl["segs"]):
-        s = risco(max(t1 - t0, 0.1), seed=k)
+    for k, (t0, t1, e, pg) in enumerate(tl["segs"]):           # o riscar do marcador: quase impercetível
+        s = risco(max(t1 - t0, 0.1), seed=k) * 0.16
         a = int(t0 * SR)
         fx[a:a + len(s)] += s[: n - a]
     for p in tl["paginas"][1:]:
-        s = folha()
-        a = int(max(p["start"] - SLIDE - 0.05, 0) * SR)
+        s = folha() * 0.10
+        a = int(max(p["start"] - PRE - SLIDE, 0) * SR)
         fx[a:a + len(s)] += s
-    mix = voz + fx
-    pico = float(np.abs(mix).max())
-    if pico > 0.95:
-        mix *= 0.95 / pico
+    musica = gerar_musica(n / SR, voz)
+    mix = voz + fx + musica
+    mix *= 0.72 / (float(np.percentile(np.abs(mix), 99.7)) + 1e-9)      # normalização linear (mantém as diferenças de nível)
+    mix = np.tanh(mix * 1.15) / np.tanh(1.15) * 0.89                    # limitador suave para os picos
     return mix[: int(tl["total"] * SR)]
 
 
@@ -227,12 +238,12 @@ class Renderer:
     # ---- legendas
     def legendas(self, ctx, t):
         for b, chs in self.chunks:
-            if not (b["start"] - 0.1 <= t <= b["end"] + 0.5):
+            if not (b["start"] - 0.1 <= t <= b["end"] + 1.0):
                 continue
             for ci, ch in enumerate(chs):
                 a = ch[0]["t0"] - 0.05
                 nx = chs[ci + 1][0]["t0"] - 0.05 if ci + 1 < len(chs) else 1e9
-                z = min(ch[-1]["t1"] + 0.3, nx)
+                z = min(ch[-1]["t1"] + 0.7, nx)
                 if a <= t < z:
                     self._chunk(ctx, ch, t)
                     return
@@ -294,10 +305,10 @@ class Renderer:
         # páginas (o caderno desliza ao mudar de página)
         ps = tl["paginas"]
         for k_, pg in enumerate(ps):
-            e_in = clamp((t - (pg["start"] - SLIDE)) / SLIDE)
+            e_in = clamp((t - (pg["start"] - PRE - SLIDE)) / SLIDE)
             off = W * (1 - ease(e_in)) if k_ > 0 else 0.0
             if k_ + 1 < len(ps):
-                off -= W * ease(clamp((t - (ps[k_ + 1]["start"] - SLIDE)) / SLIDE))
+                off -= W * ease(clamp((t - (ps[k_ + 1]["start"] - PRE - SLIDE)) / SLIDE))
             if off >= W - 1 or off <= -W + 1:
                 continue
             ctx.save()
@@ -339,7 +350,7 @@ def _frame(f):
 
 def codificar(tl, wav, saida, workers):
     cmd = [ffmpeg_exe(), "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "bgra", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-i", str(wav),
-           "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
+           "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
            "-t", f"{tl['n_frames'] / FPS:.3f}", "-movflags", "+faststart", str(saida)]
     ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     t0 = time.time()
