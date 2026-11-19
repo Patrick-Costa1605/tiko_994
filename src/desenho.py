@@ -271,7 +271,7 @@ def desenha_mao(ctx, x, y, t):
     """Mão que segura um marcador; a ponta do marcador fica em (x, y)."""
     ctx.save()
     ctx.translate(x, y)
-    ctx.scale(0.82, 0.82)
+    ctx.scale(0.64, 0.64)
     ctx.translate(-x, -y)
     ang = math.radians(-62)                       # o marcador sobe para a direita
     dx, dy = math.cos(ang), math.sin(ang)

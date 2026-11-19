@@ -114,7 +114,7 @@ def chefes(parte):
              (1210, "desde 2022", "Albertino", "Arteiro", "escuteiro desde 1998", VERMELHO, False)]
     E = []
     if parte == "a":
-        E.append(texto("Chefes de Agrupamento", 540, 230, 76, INK, peso=1.0))
+        E.append(texto("Chefes de Agrupamento", 540, 232, 88, INK, peso=1.0))
         E.append(caminho([(150, 290), (150, 1400)], INK, 9, seed=100, peso=2.0))
     for i, (y, anos, nome, ap, papel, cor, chap) in enumerate(nodes):
         if (parte == "a") != (i == 0):

@@ -249,18 +249,18 @@ class Renderer:
                     return
 
     def _chunk(self, ctx, ch, t):
-        size, ymid = 76, 1650
+        size, ymid = 64, SUB_Y + 0
         sp = largura_texto(ctx, "a a", size) - largura_texto(ctx, "aa", size) + 12
         ws = [largura_texto(ctx, w["text"], size) for w in ch]
         tot = sum(ws) + sp * (len(ch) - 1)
         lines = [list(range(len(ch)))]
-        if tot > 940 and len(ch) > 1:
+        if tot > SUB_W and len(ch) > 1:
             k = min(range(1, len(ch)), key=lambda k: abs(sum(ws[:k]) - sum(ws[k:])))
             lines = [list(range(k)), list(range(k, len(ch)))]
         for li, idx in enumerate(lines):
             lw = sum(ws[i] for i in idx) + sp * (len(idx) - 1)
-            x = 540 - lw / 2
-            y = ymid + (li - (len(lines) - 1) / 2) * 92
+            x = SUB_CX - lw / 2
+            y = ymid + (li - (len(lines) - 1) / 2) * 72
             for i in idx:
                 w = ch[i]
                 if t >= w["t0"] - 0.02:
@@ -287,18 +287,18 @@ class Renderer:
         ctx.set_source_surface(self.bg, 0, 0)
         ctx.paint()
 
-        # marca d'água
+        # marca d'água (dentro da zona segura)
         lg = self.imgs["logo"]
-        k = 92 / lg.get_height()
+        k = 72 / lg.get_height()
         ctx.save()
-        ctx.translate(70, 62)
+        ctx.translate(SAFE[0], MARCA_Y)
         ctx.scale(k, k)
         ctx.set_source_surface(lg, 0, 0)
-        ctx.paint_with_alpha(0.92)
+        ctx.paint_with_alpha(0.95)
         ctx.restore()
         ctx.select_font_face(FONT, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-        ctx.set_font_size(44)
-        ctx.move_to(70 + lg.get_width() * k + 20, 118)
+        ctx.set_font_size(40)
+        ctx.move_to(SAFE[0] + lg.get_width() * k + 18, MARCA_Y + 50)
         ctx.set_source_rgba(*VERDE, 0.95)
         ctx.show_text("@994caxinas")
 
@@ -313,8 +313,11 @@ class Renderer:
                 continue
             ctx.save()
             ctx.translate(off, 0)
-            ctx.rectangle(0, AREA[1] - 20, W, AREA[3] + 40)
+            ctx.rectangle(0, VIEW_Y0 - 40, W, VIEW_H + 80)
             ctx.clip()
+            ctx.translate(X_CENA, VIEW_Y0)
+            ctx.scale(S_CENA, S_CENA)
+            ctx.translate(0, -AREA[1])
             for e in pg["els"]:
                 if t < e["t0"]:
                     continue
@@ -324,7 +327,7 @@ class Renderer:
             ctx.restore()
 
         if t < tl["total"] - 0.3:
-            x, y = self.mao(t)
+            x, y = para_ecra(*self.mao(t))
             if -200 < x < W + 400:
                 desenha_mao(ctx, x, y, t)
         self.legendas(ctx, t)
@@ -350,7 +353,8 @@ def _frame(f):
 
 def codificar(tl, wav, saida, workers):
     cmd = [ffmpeg_exe(), "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "bgra", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-i", str(wav),
-           "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
+           "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "medium", "-profile:v", "high", "-level", "4.1", "-pix_fmt", "yuv420p", "-crf", "17", "-maxrate", "12M", "-bufsize", "20M",
+           "-r", str(FPS), "-fps_mode", "cfr", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
            "-t", f"{tl['n_frames'] / FPS:.3f}", "-movflags", "+faststart", str(saida)]
     ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     t0 = time.time()
