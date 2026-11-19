@@ -82,12 +82,12 @@ def portugal():
     x, y = pj(-8.42, 41.55)
     E.append(caminho(circulo(x, y, 18, 3), INK, 8, fill=VERMELHO, fa=1, fechado=True, seed=71, peso=0.4, ancora="Braga"))
     E.append(caminho(catmull([(x + 24, y - 6), (x + 200, y - 40), (x + 350, y - 36)]), VERMELHO, 8, seed=72, peso=0.6))
-    E.append(texto("Braga", 705, y - 62, 118, VERMELHO, align="l", peso=1.1))
-    E.append(texto("27 de maio", 705, y + 18, 66, INK, align="l", peso=0.9, ancora="maio"))
-    E.append(texto("de 1923", 705, y + 86, 66, INK, align="l", peso=0.7))
+    E.append(texto("Braga", 705, y - 62, 132, VERMELHO, align="l", peso=1.1))
+    E.append(texto("27 de maio", 705, y + 26, 72, INK, align="l", peso=0.9, ancora="maio"))
+    E.append(texto("de 1923", 705, y + 100, 72, INK, align="l", peso=0.7))
     E += flordelis(810, 740, 0.9, fill=VERDE, seed=80)
     E.append(texto("nasce o CNE", 790, 960, 86, VERDE, peso=1.0, sublinhado=True, ancora="Corpo"))
-    E.append(texto("Portugal", 790, 1180, 110, INK, peso=1.0))
+    E.append(texto("Portugal", 790, 1180, 72, CINZA, peso=0.8))
     return E
 
 
@@ -108,23 +108,17 @@ def noventa_e_um():
     return E
 
 
-def chefes(parte):
-    nodes = [(330, "1991 – 2013", "Miguel", "Fernandes de Castro", "1.º Chefe de Agrupamento", VERDE, True),
-             (770, "2013 – 2022", "Milton", "Fernandes de Castro", "dirigente fundador", AZUL, False),
-             (1210, "desde 2022", "Albertino", "Arteiro", "escuteiro desde 1998", VERMELHO, False)]
-    E = []
-    if parte == "a":
-        E.append(texto("Chefes de Agrupamento", 540, 232, 88, INK, peso=1.0))
-        E.append(caminho([(150, 290), (150, 1400)], INK, 9, seed=100, peso=2.0))
-    for i, (y, anos, nome, ap, papel, cor, chap) in enumerate(nodes):
-        if (parte == "a") != (i == 0):
-            continue
+def chefes(parte=None):
+    nodes = [(330, "1991 – 2013", "Miguel", "Fernandes de Castro", "1.º Chefe de Agrupamento", VERDE),
+             (770, "2013 – 2022", "Milton", "Fernandes de Castro", "dirigente fundador", AZUL),
+             (1210, "desde 2022", "Albertino", "Arteiro", "escuteiro desde 1998", VERMELHO)]
+    E = [texto("Chefes de Agrupamento", 540, 232, 88, INK, peso=1.0),
+         caminho([(150, 290), (150, 1400)], INK, 9, seed=100, peso=2.0)]
+    for i, (y, anos, nome, ap, papel, cor) in enumerate(nodes):
         E.append(caminho(circulo(150, y, 30, i), INK, 9, fill=cor, fa=1, fechado=True, seed=110 + i, peso=0.5))
-        E.append(texto(anos, 215, y + 8, 98, cor, align="l", peso=1.1, ancora=nome if i else "Miguel"))
-        E.append(texto(nome, 215, y + 88, 74, INK, align="l", peso=0.9))
-        E.append(texto(ap, 215, y + 152, 58, INK, align="l", peso=1.0))
-        E.append(texto(papel, 215, y + 212, 48, CINZA, align="l", peso=0.9))
-        E += pessoa(930, y + 250, 0.68, lenco=cor, chapeu=chap, braco="dir", seed=120 + i * 20)
+        E.append(texto(anos, 215, y + 8, 98, cor, align="l", peso=1.1, ancora=nome))
+        E.append(texto(nome + " " + ap, 215, y + 88, 66, INK, align="l", peso=0.9))
+        E.append(texto(papel, 215, y + 152, 52, CINZA, align="l", peso=0.9))
     return E
 
 
@@ -136,26 +130,18 @@ def hoje():
         E += lenco_icone(x, y, 1.3, cor, seed=130 + i * 3)
         E.append(texto(nome, x, y + 140, 62, INK, peso=0.9))
         E.append(texto(idades + " anos", x, y + 205, 54, cor if cor != AMARELO else CASTANHO, peso=0.8))
-    E.append(texto("+100 jovens formados", 540, 1420, 84, INK, peso=1.4, sublinhado=True, ancora="100"))
+    E.append(texto("a formar jovens desde 1991", 540, 1420, 72, INK, peso=1.2, sublinhado=True, ancora="formar"))
     return E
 
 
 def missao():
-    E = [texto("servir", 540, 360, 250, VERDE, peso=1.2, sublinhado=True, ancora="serviço")]
-    coracao = catmull([(540, 800), (420, 700), (400, 600), (470, 545), (540, 600), (610, 545), (680, 600), (660, 700)], closed=True)
-    E.append(caminho(coracao, INK, 10, fill=VERMELHO, fa=0.9, fechado=True, seed=140, peso=1.4))
-    # tenda
-    E.append(caminho([(130, 1250), (350, 960), (570, 1250), (130, 1250)], INK, 10, fill=AMARELO, fa=0.85, fechado=True, seed=141, peso=1.6, ancora="livre"))
-    E.append(caminho([(350, 960), (300, 1250), (400, 1250), (350, 960)], INK, 8, fill=hx("#4A3A22"), fa=0.8, fechado=True, seed=142, peso=0.7))
-    # fogueira
-    E.append(caminho([(700, 1250), (880, 1210)], INK, 14, seed=143, peso=0.4, ancora="fraternidade"))
-    E.append(caminho([(700, 1210), (880, 1250)], INK, 14, seed=144, peso=0.4))
-    chama = catmull([(790, 1215), (730, 1150), (770, 1100), (760, 1040), (820, 1090), (850, 1140), (830, 1215)], closed=True)
-    E.append(caminho(chama, INK, 8, fill=LARANJA, fa=0.95, fechado=True, seed=145, peso=0.9))
-    E.append(caminho(catmull([(790, 1200), (770, 1160), (795, 1130), (815, 1160), (800, 1200)], closed=True), INK, 6, fill=AMARELO, fa=1, fechado=True, seed=146, peso=0.5))
-    for k, (x, y) in enumerate(((650, 1000), (930, 960), (900, 1080), (230, 800), (470, 860))):
-        E.append(caminho([(x - 20, y), (x + 20, y)], INK, 7, seed=150 + k * 2, peso=0.15))
-        E.append(caminho([(x, y - 20), (x, y + 20)], INK, 7, seed=151 + k * 2, peso=0.15))
+    """Servir: duas pessoas de braços no ar, com um coração entre elas, ao ar livre."""
+    E = [texto("servir", 540, 360, 250, VERDE, peso=1.2, sublinhado=True)]
+    E.append(caminho([(90, 1250), (990, 1236)], INK, 9, seed=141, peso=0.9, ancora="livre"))
+    E += pessoa(260, 1250, 1.5, lenco=AMARELO, braco="cima", seed=170)
+    E += pessoa(820, 1250, 1.5, lenco=AZUL, braco="cima", seed=190)
+    coracao = catmull([(540, 860), (420, 760), (400, 660), (470, 605), (540, 660), (610, 605), (680, 660), (660, 760)], closed=True)
+    E.append(caminho(coracao, INK, 10, fill=VERMELHO, fa=0.9, fechado=True, seed=140, peso=1.4, ancora="fraternidade"))
     return E
 
 
@@ -168,4 +154,4 @@ def fim():
 
 
 CENAS = {"gancho": lambda p: gancho(), "caxinas": lambda p: caxinas(), "escutismo": lambda p: escutismo(), "portugal": lambda p: portugal(),
-         "noventa_e_um": lambda p: noventa_e_um(), "chefes": chefes, "hoje": lambda p: hoje(), "missao": lambda p: missao(), "fim": lambda p: fim()}
+         "noventa_e_um": lambda p: noventa_e_um(), "chefes": lambda p: chefes(), "hoje": lambda p: hoje(), "missao": lambda p: missao(), "fim": lambda p: fim()}

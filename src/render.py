@@ -27,9 +27,9 @@ from config import *  # noqa: E402
 from desenho import clamp, desenha_elemento, desenha_mao, ease, largura_texto, ponto_em, h01  # noqa: E402
 from voz import falado, norm, sintetizar, silabas  # noqa: E402
 
-SLIDE = 0.85                   # duração do virar de página
-PRE = 0.30                     # a página nova fica visível 0,3 s antes de a voz e a mão começarem
-GAP_PAG, GAP_CONT = 2.3, 0.75  # pausa entre páginas (a página anterior fica parada ~1,2 s para se ler)
+SLIDE = 0.75                   # duração do virar de página
+PRE = 0.15                     # a página nova fica visível 0,3 s antes de a voz e a mão começarem
+GAP_PAG, GAP_CONT = 1.9, 0.75  # pausa entre páginas (a página fica parada ~0,7 s depois de desenhada)
 PAUSA_FRASE = 0.30
 
 
@@ -122,10 +122,9 @@ def construir(caminho_guiao):
             t_loc += dur + (PAUSA_FRASE + (0.12 if fr.endswith("?") else 0.0))
         end = start + t_loc - PAUSA_FRASE
         blocos.append({"cena": rb["cena"], "parte": rb.get("parte"), "nova": nova or i == 0, "start": start, "end": end, "words": ws,
-                       "folga": rb.get("folga", 0.45 if (i + 1 < len(cfg["blocos"]) and not cfg["blocos"][i + 1].get("continua")) else 0.2),
-                       "texto": rb["texto"]})
+                       "folga": rb.get("folga", 0.30 if (i + 1 < len(cfg["blocos"]) and not cfg["blocos"][i + 1].get("continua")) else 0.2),
+                       "texto": rb["texto"], "legenda_n": rb.get("legenda_n")})
         cur = end
-    total = blocos[-1]["end"] + 3.0
 
     # páginas e elementos agendados
     paginas = []
@@ -137,6 +136,8 @@ def construir(caminho_guiao):
         for e, (t0, t1) in zip(elems, tempos):
             e["t0"], e["t1"] = t0, t1
             paginas[-1]["els"].append(e)
+    ultimo = max(e["t1"] for p in paginas for e in p["els"])
+    total = max(blocos[-1]["end"], ultimo) + 2.2           # o cartão final fica parado ~2 s, com a música a esvanecer
     segs = sorted(((e["t0"], e["t1"], e, k) for k, p in enumerate(paginas) for e in p["els"] if e["k"] in ("path", "texto")), key=lambda s: s[0])
     return {"blocos": blocos, "paginas": paginas, "segs": segs, "total": total, "n_frames": int(math.ceil(total * FPS)), "cfg": cfg}, partes
 
@@ -155,10 +156,11 @@ def mistura(tl, partes):
         a = int(t0 * SR)
         fx[a:a + len(s)] += s[: n - a]
     for p in tl["paginas"][1:]:
-        s = folha() * 0.10
+        s = folha() * 0.045
         a = int(max(p["start"] - PRE - SLIDE, 0) * SR)
         fx[a:a + len(s)] += s
     musica = gerar_musica(n / SR, voz)
+    musica = np.pad(musica, (0, max(0, n - len(musica))))[:n]
     mix = voz + fx + musica
     mix *= 0.72 / (float(np.percentile(np.abs(mix), 99.7)) + 1e-9)      # normalização linear (mantém as diferenças de nível)
     mix = np.tanh(mix * 1.15) / np.tanh(1.15) * 0.89                    # limitador suave para os picos
@@ -206,7 +208,7 @@ class Renderer:
         self.ctx = cairo.Context(self.surface)
         self.imgs = {"logo": cairo.ImageSurface.create_from_png(str(ROOT / "assets" / "logo-994.png"))}
         self.starts = [p["start"] for p in tl["paginas"]]
-        self.chunks = [(b, chunks(b["words"])) for b in tl["blocos"]]
+        self.chunks = [(b, chunks(b["words"][:b["legenda_n"]] if b.get("legenda_n") else b["words"])) for b in tl["blocos"]]
         self.segt0 = [s[0] for s in tl["segs"]]
 
     # ---- posição da mão

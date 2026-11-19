@@ -362,9 +362,4 @@ def desenha_mao(ctx, x, y, t):
     ctx.move_to(*P(176, -4))
     ctx.line_to(*P(130, -48))
     ctx.stroke()
-    ctx.set_source_rgb(*INK)                      # punho
-    ctx.set_line_width(8)
-    ctx.move_to(*P(300, -42))
-    ctx.line_to(*P(300, 104))
-    ctx.stroke()
     ctx.restore()

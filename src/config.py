@@ -31,7 +31,7 @@ VIEW_Y0, VIEW_H = 312, 1030                        # onde cabe a página desenha
 DESIGN_H = 1330                                    # altura útil das cenas (de y=130 a y=1460)
 S_CENA = VIEW_H / DESIGN_H                         # as cenas são desenhadas em 1080×1330 e escaladas para a zona segura
 X_CENA = SAFE[0] + ((SAFE[2] - SAFE[0]) - W * S_CENA) / 2
-SUB_Y = 1432                                       # linha de base das legendas (1 linha); 2 linhas: ±36
+SUB_Y = 1420                                       # linha de base das legendas (1 linha); 2 linhas: ±36
 SUB_W = SAFE[2] - SAFE[0] - 20                     # largura máxima das legendas
 SUB_CX = (SAFE[0] + SAFE[2]) / 2
 

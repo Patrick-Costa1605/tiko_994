@@ -118,5 +118,5 @@ def gerar(total, voz, shaker_a=6.0):
     t = np.arange(n) / SR
     gain *= 1 + 0.6 * np.exp(-t / 3.0)
     gain *= 1 + 0.5 * np.clip((t - (total - 4.5)) / 2.0, 0, 1)
-    gain *= np.clip(t / 0.4, 0, 1) * np.clip((total - t) / 1.8, 0, 1)
+    gain *= np.clip(t / 0.4, 0, 1) * np.clip((total - t) / 2.0, 0, 1)
     return (m * gain).astype(np.float32)
