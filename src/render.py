@@ -1,0 +1,389 @@
+#!/usr/bin/env python3
+"""«Como surgiu o Escutismo nas Caxinas»: vídeo desenhado à mão, em tempo real, sincronizado com a voz.
+
+    python src/render.py guioes/como_surgiu.json              # -> output/como_surgiu.mp4
+    python src/render.py guioes/como_surgiu.json --png 3 12   # só imagens de teste (segundos)
+"""
+import argparse
+import bisect
+import json
+import math
+import multiprocessing as mp
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+import cairo
+import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from audio import SR, decode, ffmpeg_exe, folha, risco, trim_silence, write_wav  # noqa: E402
+from cenas import CENAS  # noqa: E402
+from config import *  # noqa: E402
+from desenho import clamp, desenha_elemento, desenha_mao, ease, largura_texto, ponto_em, h01  # noqa: E402
+from voz import falado, norm, sintetizar, silabas  # noqa: E402
+
+SLIDE = 0.6                    # duração do virar de página
+GAP_PAG, GAP_CONT = 0.95, 0.40
+
+
+# ------------------------------------------------------------------ guião -> tempos
+def palavras_do_bloco(texto, pron, pal_edge, dur, off):
+    ws = [{"text": w} for w in texto.split()]
+    toks = [falado(w["text"], pron).split() for w in ws]
+    n = sum(len(t) for t in toks)
+    if len(pal_edge) == n:
+        k = 0
+        for w, tk in zip(ws, toks):
+            a, b = pal_edge[k], pal_edge[k + len(tk) - 1]
+            k += len(tk)
+            w["t0"], w["t1"] = max(0.0, a["t0"] - off), min(dur, b["t1"] - off)
+    else:
+        print(f"  ! «{texto[:30]}…»: {len(pal_edge)} marcas vs {n} palavras; estimado por sílabas", file=sys.stderr)
+        pesos = np.array([silabas(" ".join(t)) for t in toks], float)
+        e = np.concatenate([[0], np.cumsum(pesos)]) / pesos.sum()
+        for w, s, t in zip(ws, e[:-1], e[1:]):
+            w["t0"], w["t1"] = 0.04 + (dur - 0.08) * s, 0.04 + (dur - 0.08) * t
+    last = 0.0
+    for w in ws:
+        w["t0"] = max(w["t0"], last)
+        w["t1"] = max(w["t1"], w["t0"] + 0.08)
+        last = w["t0"]
+    return ws
+
+
+def agenda(elems, t_ini, t_fim, palavras):
+    """Distribui os elementos em sequência (uma só mão), ajustando a velocidade para acabarem com a fala."""
+    def bruto(e):
+        if e["k"] == "path":
+            return max(0.12, e["len"] / 1700.0) * e["peso"]
+        if e["k"] == "texto":
+            return max(0.35, 0.065 * len(e["txt"])) * e["peso"]
+        return 0.5 * e["peso"]
+
+    anc = []
+    for e in elems:
+        a = e.get("ancora")
+        tt = None
+        if a:
+            for w in palavras:
+                if norm(a) in norm(w["text"]):
+                    tt = w["t0"]
+                    break
+        anc.append(tt)
+
+    def corre(f):
+        cur, out = t_ini, []
+        for j, (e, a) in enumerate(zip(elems, anc)):
+            if a is not None and j > 0:                 # o 1.º elemento (o título) nunca espera pela voz
+                cur = max(cur, a - 0.10)
+            d = bruto(e) * f
+            out.append((cur, cur + d))
+            cur += d + 0.05
+        return out, cur
+
+    lo, hi = 0.45, 1.9
+    for _ in range(14):
+        mid = (lo + hi) / 2
+        _, fim = corre(mid)
+        if fim <= t_fim:
+            lo = mid
+        else:
+            hi = mid
+    return corre(lo)[0]
+
+
+def construir(caminho_guiao):
+    cfg = json.loads(Path(caminho_guiao).read_text(encoding="utf-8"))
+    voz, pron = cfg["voz"], cfg.get("pronuncia", {})
+    blocos, partes = [], []
+    cur = 0.7
+    for i, rb in enumerate(cfg["blocos"]):
+        spoken = " ".join(falado(w, pron) for w in rb["texto"].split())
+        mp3, pal = sintetizar(spoken, voz["nome"], voz["velocidade"], voz["tom"])
+        x, off = trim_silence(decode(mp3))
+        dur = len(x) / SR
+        nova = i > 0 and not rb.get("continua")
+        start = cur if i == 0 else cur + (GAP_PAG if nova else GAP_CONT)
+        ws = palavras_do_bloco(rb["texto"], pron, pal, dur, off)
+        for w in ws:
+            w["t0"] += start
+            w["t1"] += start
+        partes.append((start, x))
+        blocos.append({"cena": rb["cena"], "parte": rb.get("parte"), "nova": nova or i == 0, "start": start, "end": start + dur, "words": ws,
+                       "folga": rb.get("folga", 0.45 if (i + 1 < len(cfg["blocos"]) and not cfg["blocos"][i + 1].get("continua")) else 0.2), "texto": rb["texto"]})
+        cur = start + dur
+    total = blocos[-1]["end"] + 2.2
+
+    # páginas e elementos agendados
+    paginas = []
+    for b in blocos:
+        if b["nova"]:
+            paginas.append({"start": b["start"], "els": []})
+        elems = CENAS[b["cena"]](b["parte"])
+        tempos = agenda(elems, b["start"] + 0.05, b["end"] + b["folga"], b["words"])
+        for e, (t0, t1) in zip(elems, tempos):
+            e["t0"], e["t1"] = t0, t1
+            paginas[-1]["els"].append(e)
+    segs = sorted(((e["t0"], e["t1"], e, k) for k, p in enumerate(paginas) for e in p["els"] if e["k"] in ("path", "texto")), key=lambda s: s[0])
+    return {"blocos": blocos, "paginas": paginas, "segs": segs, "total": total, "n_frames": int(math.ceil(total * FPS)), "cfg": cfg}, partes
+
+
+# ------------------------------------------------------------------ áudio
+def mistura(tl, partes):
+    n = int(math.ceil(tl["total"] * SR)) + SR
+    voz = np.zeros(n, np.float32)
+    for start, x in partes:
+        a = int(start * SR)
+        voz[a:a + len(x)] += x
+    fx = np.zeros(n, np.float32)
+    for k, (t0, t1, e, pg) in enumerate(tl["segs"]):
+        s = risco(max(t1 - t0, 0.1), seed=k)
+        a = int(t0 * SR)
+        fx[a:a + len(s)] += s[: n - a]
+    for p in tl["paginas"][1:]:
+        s = folha()
+        a = int(max(p["start"] - SLIDE - 0.05, 0) * SR)
+        fx[a:a + len(s)] += s
+    mix = voz + fx
+    pico = float(np.abs(mix).max())
+    if pico > 0.95:
+        mix *= 0.95 / pico
+    return mix[: int(tl["total"] * SR)]
+
+
+# ------------------------------------------------------------------ imagem
+def papel():
+    r = np.random.default_rng(994)
+    base = np.array([PAPER[2], PAPER[1], PAPER[0]], np.float32) * 255
+    img = np.empty((H, W, 3), np.float32)
+    img[:] = base
+    img += r.normal(0, 2.2, (H, W, 1)).astype(np.float32)
+    coarse = r.normal(0, 2.0, (H // 6, W // 6, 1)).astype(np.float32)
+    img += np.kron(coarse, np.ones((6, 6, 1), np.float32))
+    yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
+    d = np.sqrt(((xx - W / 2) / (W * 0.72)) ** 2 + ((yy - H / 2) / (H * 0.72)) ** 2)
+    img *= (1 - 0.13 * np.clip(d - 0.4, 0, 1))[..., None]
+    out = np.empty((H, W, 4), np.uint8)
+    out[..., :3] = np.clip(img, 0, 255).astype(np.uint8)
+    out[..., 3] = 255
+    return cairo.ImageSurface.create_for_data(out, cairo.FORMAT_ARGB32, W, H, W * 4), out
+
+
+def chunks(palavras):
+    out, cur = [], []
+    for w in palavras:
+        if cur:
+            gap = w["t0"] - cur[-1]["t1"]
+            if len(cur) >= 4 or sum(len(x["text"]) + 1 for x in cur) + len(w["text"]) > 24 or gap > 0.4 or cur[-1]["text"][-1] in ".!?:" \
+                    or (cur[-1]["text"][-1] == "," and len(cur) >= 2):
+                out.append(cur)
+                cur = []
+        cur.append(w)
+    if cur:
+        out.append(cur)
+    return out
+
+
+class Renderer:
+    def __init__(self, tl):
+        self.tl = tl
+        self.bg, self._buf = papel()
+        self.surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, W, H)
+        self.ctx = cairo.Context(self.surface)
+        self.imgs = {"logo": cairo.ImageSurface.create_from_png(str(ROOT / "assets" / "logo-994.png"))}
+        self.starts = [p["start"] for p in tl["paginas"]]
+        self.chunks = [(b, chunks(b["words"])) for b in tl["blocos"]]
+        self.segt0 = [s[0] for s in tl["segs"]]
+
+    # ---- posição da mão
+    def _ponta(self, e, p):
+        if e["k"] == "path":
+            return ponto_em(e, clamp(p))
+        wt = largura_texto(self.ctx, e["txt"], e["size"])
+        x0 = e["x"] - {"c": wt / 2, "l": 0, "r": wt}[e["align"]]
+        return (x0 + wt * clamp(p), e["y"] - e["size"] * 0.25)
+
+    def mao(self, t):
+        REST = (W + 260.0, 420.0)
+        segs = self.tl["segs"]
+        i = bisect.bisect_right(self.segt0, t) - 1          # último segmento já começado
+        prev = nxt = None
+        if i >= 0:
+            t0, t1, e, _ = segs[i]
+            if t <= t1:
+                return self._ponta(e, (t - t0) / max(t1 - t0, 1e-6))
+            prev = (t1, self._ponta(e, 1.0))
+        if i + 1 < len(segs):
+            nxt = (segs[i + 1][0], self._ponta(segs[i + 1][2], 0.0))
+        lerp = lambda a, b, k: (a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k)
+        pos = lerp(prev[1], REST, ease((t - prev[0]) / 0.55)) if prev else REST
+        if nxt and nxt[0] - t < 0.55:
+            pos = lerp(pos, nxt[1], ease(1 - (nxt[0] - t) / 0.55))
+        return pos
+
+    # ---- legendas
+    def legendas(self, ctx, t):
+        for b, chs in self.chunks:
+            if not (b["start"] - 0.1 <= t <= b["end"] + 0.5):
+                continue
+            for ci, ch in enumerate(chs):
+                a = ch[0]["t0"] - 0.05
+                nx = chs[ci + 1][0]["t0"] - 0.05 if ci + 1 < len(chs) else 1e9
+                z = min(ch[-1]["t1"] + 0.3, nx)
+                if a <= t < z:
+                    self._chunk(ctx, ch, t)
+                    return
+
+    def _chunk(self, ctx, ch, t):
+        size, ymid = 76, 1650
+        sp = largura_texto(ctx, "a a", size) - largura_texto(ctx, "aa", size) + 12
+        ws = [largura_texto(ctx, w["text"], size) for w in ch]
+        tot = sum(ws) + sp * (len(ch) - 1)
+        lines = [list(range(len(ch)))]
+        if tot > 940 and len(ch) > 1:
+            k = min(range(1, len(ch)), key=lambda k: abs(sum(ws[:k]) - sum(ws[k:])))
+            lines = [list(range(k)), list(range(k, len(ch)))]
+        for li, idx in enumerate(lines):
+            lw = sum(ws[i] for i in idx) + sp * (len(idx) - 1)
+            x = 540 - lw / 2
+            y = ymid + (li - (len(lines) - 1) / 2) * 92
+            for i in idx:
+                w = ch[i]
+                if t >= w["t0"] - 0.02:
+                    ativo = w["t0"] - 0.02 <= t < w["t1"] + 0.06
+                    if ativo:                                    # sublinhado de marcador amarelo
+                        ctx.save()
+                        ctx.rotate(0)
+                        ctx.rectangle(x - 8, y - size * 0.62, ws[i] + 16, size * 0.78)
+                        ctx.set_source_rgba(*AMARELO, 0.78)
+                        ctx.fill()
+                        ctx.restore()
+                    ctx.select_font_face(FONT, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+                    ctx.set_font_size(size)
+                    ctx.move_to(x, y)
+                    ctx.set_source_rgb(*INK)
+                    ctx.show_text(w["text"])
+                x += ws[i] + sp
+
+    # ---- frame
+    def render(self, f):
+        tl, ctx = self.tl, self.ctx
+        t = f / FPS
+        step = f // STEP
+        ctx.set_source_surface(self.bg, 0, 0)
+        ctx.paint()
+
+        # marca d'água
+        lg = self.imgs["logo"]
+        k = 92 / lg.get_height()
+        ctx.save()
+        ctx.translate(70, 62)
+        ctx.scale(k, k)
+        ctx.set_source_surface(lg, 0, 0)
+        ctx.paint_with_alpha(0.92)
+        ctx.restore()
+        ctx.select_font_face(FONT, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+        ctx.set_font_size(44)
+        ctx.move_to(70 + lg.get_width() * k + 20, 118)
+        ctx.set_source_rgba(*VERDE, 0.95)
+        ctx.show_text("@994caxinas")
+
+        # páginas (o caderno desliza ao mudar de página)
+        ps = tl["paginas"]
+        for k_, pg in enumerate(ps):
+            e_in = clamp((t - (pg["start"] - SLIDE)) / SLIDE)
+            off = W * (1 - ease(e_in)) if k_ > 0 else 0.0
+            if k_ + 1 < len(ps):
+                off -= W * ease(clamp((t - (ps[k_ + 1]["start"] - SLIDE)) / SLIDE))
+            if off >= W - 1 or off <= -W + 1:
+                continue
+            ctx.save()
+            ctx.translate(off, 0)
+            ctx.rectangle(0, AREA[1] - 20, W, AREA[3] + 40)
+            ctx.clip()
+            for e in pg["els"]:
+                if t < e["t0"]:
+                    continue
+                p = clamp((t - e["t0"]) / max(e["t1"] - e["t0"], 1e-6))
+                ff = ease((t - e["t1"]) / 0.5) if t > e["t1"] else 0.0
+                desenha_elemento(ctx, e, p, step, ff, self.imgs)
+            ctx.restore()
+
+        if t < tl["total"] - 0.3:
+            x, y = self.mao(t)
+            if -200 < x < W + 400:
+                desenha_mao(ctx, x, y, t)
+        self.legendas(ctx, t)
+        self.surface.flush()
+        return bytes(self.surface.get_data())
+
+    def png(self, f, path):
+        self.render(f)
+        self.surface.write_to_png(path)
+
+
+_R = None
+
+
+def _init(tl):
+    global _R
+    _R = Renderer(tl)
+
+
+def _frame(f):
+    return _R.render(f)
+
+
+def codificar(tl, wav, saida, workers):
+    cmd = [ffmpeg_exe(), "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "bgra", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-i", str(wav),
+           "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
+           "-t", f"{tl['n_frames'] / FPS:.3f}", "-movflags", "+faststart", str(saida)]
+    ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+    t0 = time.time()
+    ctx = mp.get_context("fork" if sys.platform == "linux" else "spawn")
+    with ctx.Pool(workers, initializer=_init, initargs=(tl,)) as pool:
+        for i, buf in enumerate(pool.imap(_frame, range(tl["n_frames"]), chunksize=2)):
+            ff.stdin.write(buf)
+            if i % 150 == 0 or i == tl["n_frames"] - 1:
+                print(f"\r  frame {i + 1}/{tl['n_frames']}  ({time.time() - t0:.0f}s)", end="", flush=True)
+    ff.stdin.close()
+    if ff.wait():
+        raise SystemExit("ffmpeg falhou")
+    print()
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("guiao")
+    ap.add_argument("--png", nargs="+", type=float)
+    ap.add_argument("-j", "--workers", type=int, default=max(1, mp.cpu_count() or 2))
+    a = ap.parse_args()
+    nome = Path(a.guiao).stem
+    out = ROOT / "output"
+    out.mkdir(exist_ok=True)
+    print("[1/3] Voz e tempos")
+    tl, partes = construir(a.guiao)
+    for b in tl["blocos"]:
+        print(f"  {b['start']:5.1f}–{b['end']:5.1f}s  [{b['cena']}] {b['texto'][:64]}")
+    print(f"  duração: {tl['total']:.1f}s ({tl['n_frames']} frames)")
+    if a.png:
+        r = Renderer(tl)
+        for s in a.png:
+            p = out / f"{nome}_t{s:05.1f}.png"
+            r.png(min(int(s * FPS), tl["n_frames"] - 1), str(p))
+            print("  ", p)
+        return
+    wav = out / f"{nome}.wav"
+    write_wav(str(wav), mistura(tl, partes))
+    (out / f"{nome}.legenda.txt").write_text(tl["cfg"].get("legenda", "") + "\n", encoding="utf-8")
+    print(f"[2/3] A desenhar {tl['n_frames']} frames ({a.workers} processos)")
+    codificar(tl, wav, out / f"{nome}.mp4", a.workers)
+    wav.unlink(missing_ok=True)
+    print(f"[3/3] Pronto: {out / (nome + '.mp4')}")
+
+
+if __name__ == "__main__":
+    main()
