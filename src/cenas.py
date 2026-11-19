@@ -44,69 +44,20 @@ def gancho():
 
 # ------------------------------------------------------------------ 2. Caxinas
 def caxinas():
-    E = [texto("CAXINAS", 540, 350, 200, VERDE, peso=1.2),
-         texto("Vila do Conde", 540, 440, 64, INK, peso=0.8)]
+    E = [texto("1991", 540, 350, 220, INK, peso=1.2),
+         texto("Caxinas · Vila do Conde", 540, 440, 58, VERDE, peso=0.9)]
     # mar
     for i, (y, amp, wl, fase) in enumerate(((1000, 12, 170, 0.0), (1075, 14, 200, 1.7), (1150, 12, 160, 3.1), (1225, 14, 210, 0.8))):
-        E.append(caminho(onda(70, 1010, y, amp, wl, fase), AGUA, 9, seed=30 + i, ancora="mar" if i == 0 else None, peso=0.9))
+        E.append(caminho(onda(70, 1010, y, amp, wl, fase), AGUA, 9, seed=30 + i, ancora="Caxinas" if i == 0 else None, peso=0.9))
     # a igreja em forma de barco, a navegar nas ondas
     casco = bez((220, 900), (240, 1010), (330, 1050), (470, 1052)) + bez((470, 1052), (640, 1056), (790, 1040), (860, 900))
-    E.append(caminho(casco + [(220, 900)], INK, 10, fill=CREME, fa=1, fechado=True, seed=50, peso=1.6, ancora="igreja"))
+    E.append(caminho(casco + [(220, 900)], INK, 10, fill=CREME, fa=1, fechado=True, seed=50, peso=1.6, ancora="iniciativa"))
     E.append(caminho([(400, 900), (400, 760), (690, 650), (690, 900)], INK, 10, fill=VERMELHO, fa=0.9, fechado=True, seed=51, peso=1.2))
     E.append(caminho([(690, 650), (690, 560)], INK, 10, seed=52, peso=0.4))
     E.append(caminho([(655, 598), (725, 598)], INK, 10, seed=53, peso=0.3))
     E.append(caminho(catmull([(500, 900), (500, 850), (545, 820), (590, 850), (590, 900)]), INK, 8, fill=CASTANHO, fa=0.85, seed=54, peso=0.5))
-    # sol sorridente
-    E.append(caminho(circulo(880, 640, 80, 1), INK, 8, fill=AMARELO, fa=0.95, fechado=True, seed=1))
-    for k in range(10):
-        a = k * 2 * math.pi / 10
-        E.append(caminho([(880 + math.cos(a) * 108, 640 + math.sin(a) * 108), (880 + math.cos(a) * 146, 640 + math.sin(a) * 146)], INK, 7, seed=20 + k, peso=0.3))
-    E.append(caminho(circulo(855, 625, 6, 2), INK, 6, fill=INK, fa=1, fechado=True, seed=2, peso=0.2))
-    E.append(caminho(circulo(905, 625, 6, 3), INK, 6, fill=INK, fa=1, fechado=True, seed=3, peso=0.2))
-    E.append(caminho(elipse(880, 645, 34, 24, a0=0.2, a1=math.pi - 0.2), INK, 6, seed=4, peso=0.3))
-    return E
-
-
-# ------------------------------------------------------------------ 3. a viagem: 1907 → 1923 → 1991 (um só mapa)
-def viagem():
-    def pj(lon, lat):
-        return (120 + (lon + 9.6) * 165, 210 + (42.15 - lat) * 190)
-    costa = [(-8.87, 41.87), (-8.84, 41.70), (-8.78, 41.45), (-8.72, 41.20), (-8.68, 41.00), (-8.65, 40.70), (-8.75, 40.45), (-8.88, 40.15), (-8.96, 39.90),
-             (-9.05, 39.62), (-9.30, 39.42), (-9.38, 39.34), (-9.42, 39.0), (-9.50, 38.78), (-9.25, 38.68), (-9.12, 38.50), (-8.90, 38.50), (-8.78, 38.20),
-             (-8.80, 37.90), (-8.80, 37.45), (-8.97, 37.05), (-8.65, 37.08), (-8.30, 37.09), (-7.90, 37.00), (-7.45, 37.18),
-             (-7.42, 37.50), (-7.52, 37.90), (-7.28, 38.20), (-7.06, 38.55), (-7.16, 38.90), (-7.30, 39.28), (-7.45, 39.66), (-7.05, 39.75),
-             (-7.00, 40.00), (-6.85, 40.28), (-6.82, 40.60), (-6.95, 41.00), (-6.55, 41.30), (-6.22, 41.58), (-6.55, 41.86), (-7.05, 41.93),
-             (-7.45, 41.80), (-7.90, 41.88), (-8.20, 41.95), (-8.65, 42.04)]
-    E = [caminho(catmull([pj(*p) for p in costa], closed=True, n=6), INK, 9, fill=hx("#DCC8A0"), fa=0.8, fechado=True, seed=70, peso=2.0, tremor=1.8)]
-    # 1907: o chapéu de Baden-Powell
-    chap = chapeu(890, 262, 0.95, 300)
-    chap[0]["ancora"] = "1907"
-    E += chap
-    E.append(texto("1907", 890, 420, 100, INK, peso=1.0))
-    E.append(texto("Baden-Powell", 890, 490, 52, VERDE, peso=0.9, ancora="Baden-Powell"))
-    # 1923: o chapéu «salta» para Braga
-    bx, by = pj(-8.42, 41.55)
-    E.append(caminho(catmull([(800, 214), (640, 110), (450, 160), (bx + 14, by - 30)]), VERMELHO, 8, seed=310, peso=0.9, ancora="1923"))
-    E.append(caminho([(bx + 14, by - 30), (bx + 40, by - 40)], VERMELHO, 8, seed=311, peso=0.2))
-    E.append(caminho([(bx + 14, by - 30), (bx + 22, by - 58)], VERMELHO, 8, seed=312, peso=0.2))
-    E.append(caminho(circulo(bx, by, 17, 3), INK, 8, fill=VERMELHO, fa=1, fechado=True, seed=71, peso=0.4, ancora="Braga"))
-    E.append(caminho(catmull([(bx + 24, by + 2), (520, 430), (690, 600)]), VERMELHO, 7, seed=72, peso=0.6))
-    E.append(texto("Braga", 715, 618, 100, VERMELHO, align="l", peso=1.0))
-    E.append(texto("1923", 715, 708, 84, INK, align="l", peso=0.8))
-    # 1991: chega às Caxinas
-    cx_, cy_ = pj(-8.78, 41.38)
-    E.append(caminho(circulo(cx_, cy_, 16, 7), INK, 8, fill=AZUL, fa=1, fechado=True, seed=73, peso=0.4, ancora="1991"))
-    E.append(caminho(catmull([(cx_ + 18, cy_ + 12), (450, 640), (690, 850)]), AZUL, 7, seed=74, peso=0.6))
-    E.append(texto("Caxinas", 715, 868, 100, AZUL, align="l", peso=1.0))
-    E.append(texto("1991", 715, 958, 84, INK, align="l", peso=0.8))
-    # o Monsenhor rega uma semente: nasce o 994
-    E.append(caminho([(720, 1110), (1050, 1100)], INK, 8, seed=90, peso=0.5, ancora="Monsenhor"))
-    E.append(caminho(catmull([(880, 1105), (884, 1060), (878, 1010)]), VERDE, 9, seed=91, peso=0.4))
-    E.append(caminho(catmull([(880, 1052), (830, 1030), (806, 985), (856, 1000), (880, 1040)], closed=False), INK, 7, fill=VERDE, fa=0.9, fechado=True, seed=92, peso=0.5))
-    E.append(caminho(catmull([(882, 1032), (934, 1008), (958, 965), (910, 975), (882, 1018)], closed=False), INK, 7, fill=VERDE, fa=0.9, fechado=True, seed=93, peso=0.5))
-    E.append(texto("Mons. Domingos", 890, 1184, 52, INK, peso=1.0, ancora="Domingos"))
-    E.append(texto("de Araújo", 890, 1244, 52, INK, peso=1.0))
-    E.append(texto("Agrupamento 994", 800, 1360, 62, VERDE, peso=1.2, ancora="994", sublinhado=True))
+    E.append(texto("Mons. Domingos de Araújo", 540, 1335, 62, INK, peso=1.1, ancora="Monsenhor"))
+    E.append(texto("Agrupamento 994", 540, 1420, 78, VERDE, peso=1.2, ancora="nasceu", sublinhado=True))
     return E
 
 
@@ -174,36 +125,51 @@ def hoje():
     E += _seccao(800, 680, VERDE, "Exploradores", "10–14", "explorador", 440)
     E += _seccao(270, 1120, AZUL, "Pioneiros", "14–18", "pioneiro", 480)
     E += _seccao(800, 1120, VERMELHO, "Caminheiros", "18–22", "caminheiro", 520)
-    E.append(texto("a aprender e a servir", 540, 1408, 72, INK, peso=1.2, sublinhado=True, ancora="servir"))
+    E.append(texto("acampar, explorar, servir", 540, 1408, 70, INK, peso=1.2, sublinhado=True, ancora="acampamentos"))
     return E
 
 
-# ------------------------------------------------------------------ 6. final: há lugar para ti
-def fim():
-    """Quatro bonecos de braços dados e uma cadeira vazia; a flor-de-lis desenha-se durante «escrever esta história»
-    e «Sempre Alerta!» só aparece quando a voz o diz."""
-    fy, s = 800, 0.8
-    E = []
+# ------------------------------------------------------------------ 5. a meta: 150 escuteiros
+def _mini(x, y, k, cor, sc=1.5):
+    """Boneco minúsculo (4 traços) para encher a página."""
+    S = lambda v: v * sc
+    return [caminho(circulo(x, y - S(62), S(15), k), INK, 6, fill=PELE, fa=1, fechado=True, seed=k, peso=0.2),
+            caminho([(x - S(16), y), (x, y - S(34)), (x, y - S(47)), (x - S(22), y - S(30)), (x, y - S(44)), (x + S(22), y - S(30))], INK, 6, seed=k + 1, peso=0.25),
+            caminho([(x, y - S(34)), (x + S(16), y)], INK, 6, seed=k + 2, peso=0.15),
+            caminho([(x - S(9), y - S(47)), (x + S(9), y - S(47)), (x, y - S(34)), (x - S(9), y - S(47))], INK, 5, fill=cor, fa=1, fechado=True, seed=k + 3, peso=0.15)]
+
+
+def meta():
+    E = [texto("o nosso desafio", 540, 250, 76, INK, peso=0.9),
+         texto("150", 540, 590, 360, VERDE, peso=1.3, ancora="150"),
+         texto("escuteiros", 540, 720, 120, INK, peso=1.0, ancora="escuteiros")]
     cores = (AMARELO, VERDE, AZUL, VERMELHO)
-    xs = (130, 330, 530, 730)
-    for k, (x, cor) in enumerate(zip(xs, cores)):
-        E += pessoa(x, fy, s, lenco=cor, braco="baixo", seed=600 + k * 20)
-    for k, x in enumerate(xs):                                              # braços dados
-        E.append(caminho([(x + 40, fy - 100), (x + 160, fy - 100)], INK if k < 3 else CINZA, 8, seed=640 + k, peso=0.3))
-    g = 930                                                                 # o lugar vazio
-    E.append(caminho(circulo(g, fy - 184, 27, 650), CINZA, 8, seed=650, peso=0.5, ancora="espaço"))
-    E.append(caminho([(g, fy - 157), (g, fy - 76)], CINZA, 8, seed=651, peso=0.3))
-    E.append(caminho([(g, fy - 76), (g - 24, fy)], CINZA, 8, seed=652, peso=0.3))
-    E.append(caminho([(g, fy - 76), (g + 24, fy)], CINZA, 8, seed=653, peso=0.3))
-    E.append(texto("?", g, fy - 235, 84, VERMELHO, peso=0.7))
-    E.append(texto("Faltas tu?", 540, 905, 80, INK, peso=1.0, ancora="folha"))
-    E += flordelis(540, 1075, 0.85, fill=VERDE, seed=160)
-    E.append(texto("Sempre", 540, 300, 170, VERDE, peso=1.1, ancora="Sempre"))
-    E.append(texto("Alerta!", 540, 470, 170, VERDE, peso=1.1, ancora="Alerta"))
-    E.append(imagem("logo", 540, 1262, 190, peso=1.0))
-    E.append(texto("@994caxinas", 540, 1432, 64, INK, peso=1.0))
+    n = 0
+    for linha, y in enumerate((900, 1070, 1240)):
+        for col in range(5):
+            E += _mini(150 + col * 195 + (60 if linha % 2 else 0) - 30, y, 700 + n * 5, cores[(n + linha) % 4])
+            n += 1
     return E
 
 
-CENAS = {"gancho": lambda p: gancho(), "caxinas": lambda p: caxinas(), "viagem": lambda p: viagem(), "chefes": chefes,
-         "hoje": lambda p: hoje(), "fim": lambda p: fim()}
+# ------------------------------------------------------------------ 6. convite
+def convite():
+    """Sábado à tarde na sede; contactos para mais informação."""
+    E = [caminho(rrect(300, 240, 480, 300, 16), INK, 9, fill=CREME, fa=1, fechado=True, seed=800, peso=1.2, ancora="sábado"),
+         caminho(rrect(300, 240, 480, 88, 16), INK, 9, fill=VERMELHO, fa=1, fechado=True, seed=801, peso=0.8),
+         texto("SÁBADO", 540, 308, 76, (1, 1, 1), peso=0.9),
+         texto("à tarde", 540, 470, 120, INK, peso=1.0, ancora="tarde"),
+         caminho([(380, 760), (380, 690), (540, 590), (700, 690), (700, 760)], INK, 9, fill=VERMELHO, fa=0.9, fechado=True, seed=802, peso=0.8, ancora="sede"),
+         caminho(rrect(400, 690, 280, 150), INK, 9, fill=CREME, fa=1, fechado=True, seed=803, peso=0.8),
+         caminho(rrect(500, 750, 80, 90), INK, 8, fill=CASTANHO, fa=0.9, fechado=True, seed=804, peso=0.4),
+         texto("na nossa sede", 540, 920, 62, INK, peso=0.9),
+         texto("924 428 343", 540, 1020, 92, VERDE, peso=1.1, ancora="informação"),
+         texto("geral.994@escutismo.pt", 540, 1100, 56, INK, peso=0.9),
+         texto("994caxinas.com", 540, 1172, 62, INK, peso=0.9),
+         texto("Sempre Alerta!", 540, 1290, 112, VERDE, peso=1.1, ancora="Sempre"),
+         imagem("logo", 540, 1388, 150, peso=1.0)]
+    return E
+
+
+CENAS = {"gancho": lambda p: gancho(), "caxinas": lambda p: caxinas(), "chefes": chefes, "hoje": lambda p: hoje(),
+         "meta": lambda p: meta(), "convite": lambda p: convite()}
