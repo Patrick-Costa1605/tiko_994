@@ -1,6 +1,6 @@
 # Como surgiu o Escutismo nas Caxinas — vídeo desenhado à mão em tempo real
 
-Um Reel (1080×1920, 30 fps, ~66 s) em que uma mão desenha, com marcador sobre papel, a história do Agrupamento 994 – Caxinas,
+Um Reel (1080×1920, 30 fps, ~68 s) em que uma mão desenha, com marcador sobre papel, a história do Agrupamento 994 – Caxinas,
 ao ritmo da voz (pt-PT). Tudo é gerado por código: os traços, a mão, as legendas e o som do marcador.
 
 ```bash

@@ -246,8 +246,8 @@ def desenha_elemento(ctx, el, p, step, fa_fill, imgs):
         if el["sub"]:
             ctx.set_line_width(7)
             ctx.set_line_cap(cairo.LINE_CAP_ROUND)
-            ctx.move_to(x0, el["y"] + el["size"] * 0.18)
-            ctx.curve_to(x0 + wtxt * 0.3, el["y"] + el["size"] * 0.28, x0 + wtxt * 0.7, el["y"] + el["size"] * 0.10, x0 + wtxt, el["y"] + el["size"] * 0.2)
+            ctx.move_to(x0, el["y"] + el["size"] * 0.30)
+            ctx.curve_to(x0 + wtxt * 0.3, el["y"] + el["size"] * 0.38, x0 + wtxt * 0.7, el["y"] + el["size"] * 0.24, x0 + wtxt, el["y"] + el["size"] * 0.32)
             ctx.stroke()
         ctx.restore()
         tx = x0 + wtxt * min(p, 1.0)

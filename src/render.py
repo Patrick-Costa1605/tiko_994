@@ -103,10 +103,10 @@ def construir(caminho_guiao):
     cfg = json.loads(Path(caminho_guiao).read_text(encoding="utf-8"))
     voz, pron = cfg["voz"], cfg.get("pronuncia", {})
     blocos, partes = [], []
-    cur = 0.35
+    cur, livre = 0.35, 0.0
     for i, rb in enumerate(cfg["blocos"]):
         nova = i > 0 and not rb.get("continua")
-        start = cur if i == 0 else cur + (GAP_PAG if nova else GAP_CONT)
+        start = cur if i == 0 else (max(cur + GAP_PAG, livre) if nova else cur + GAP_CONT)
         frases = re.split(r"(?<=[.!?])\s+", rb["texto"].strip())
         ws, x_all, t_loc = [], [], 0.0
         for fr in frases:                                     # uma síntese por frase: entoação mais natural, pausas controladas
@@ -121,8 +121,12 @@ def construir(caminho_guiao):
             partes.append((start + t_loc, x))
             t_loc += dur + (PAUSA_FRASE + (0.12 if fr.endswith("?") else 0.0))
         end = start + t_loc - PAUSA_FRASE
+        folga = rb.get("folga", 0.30 if (i + 1 < len(cfg["blocos"]) and not cfg["blocos"][i + 1].get("continua")) else 0.2)
+        elems = CENAS[rb["cena"]](rb.get("parte"))
+        tempos = agenda(elems, start + 0.05, end + folga, ws)
+        livre = max(t1 for _, t1 in tempos) + PRE + SLIDE + 0.7        # a página seguinte espera que o desenho acabe
         blocos.append({"cena": rb["cena"], "parte": rb.get("parte"), "nova": nova or i == 0, "start": start, "end": end, "words": ws,
-                       "folga": rb.get("folga", 0.30 if (i + 1 < len(cfg["blocos"]) and not cfg["blocos"][i + 1].get("continua")) else 0.2),
+                       "folga": folga, "elems": elems, "tempos": tempos,
                        "texto": rb["texto"], "legenda_n": rb.get("legenda_n")})
         cur = end
 
@@ -131,9 +135,7 @@ def construir(caminho_guiao):
     for b in blocos:
         if b["nova"]:
             paginas.append({"start": b["start"], "els": []})
-        elems = CENAS[b["cena"]](b["parte"])
-        tempos = agenda(elems, b["start"] + 0.05, b["end"] + b["folga"], b["words"])
-        for e, (t0, t1) in zip(elems, tempos):
+        for e, (t0, t1) in zip(b["elems"], b["tempos"]):
             e["t0"], e["t1"] = t0, t1
             paginas[-1]["els"].append(e)
     ultimo = max(e["t1"] for p in paginas for e in p["els"])
@@ -290,18 +292,10 @@ class Renderer:
         ctx.paint()
 
         # marca d'água (dentro da zona segura)
-        lg = self.imgs["logo"]
-        k = 72 / lg.get_height()
-        ctx.save()
-        ctx.translate(SAFE[0], MARCA_Y)
-        ctx.scale(k, k)
-        ctx.set_source_surface(lg, 0, 0)
-        ctx.paint_with_alpha(0.95)
-        ctx.restore()
         ctx.select_font_face(FONT, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-        ctx.set_font_size(40)
-        ctx.move_to(SAFE[0] + lg.get_width() * k + 18, MARCA_Y + 50)
-        ctx.set_source_rgba(*VERDE, 0.95)
+        ctx.set_font_size(44)
+        ctx.move_to(SAFE[0], MARCA_Y + 50)
+        ctx.set_source_rgba(*VERDE, 1.0)
         ctx.show_text("@994caxinas")
 
         # páginas (o caderno desliza ao mudar de página)

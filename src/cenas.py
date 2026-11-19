@@ -47,7 +47,7 @@ def caxinas():
     E.append(caminho([(350, 985), (350, 800)], INK, 8, seed=40, ancora="pescadores"))
     E.append(caminho([(352, 812), (352, 960), (450, 960), (352, 812)], INK, 7, fill=(1, 1, 1), fa=0.9, fechado=True, seed=41, peso=0.6))
     E.append(caminho([(350, 800), (400, 818), (350, 836)], INK, 6, fill=VERMELHO, fa=1, fechado=True, seed=42, peso=0.3))
-    E.append(caminho(cas, INK, 8, fill=VERMELHO, fa=0.9, fechado=True, seed=43))
+    E.append(caminho(cas, INK, 8, fill=VERMELHO, fa=1.0, fechado=True, seed=43))
     E.append(caminho(onda(240, 470, 1075, 10, 90, 0.4), AGUA, 9, seed=44, peso=0.5))
     return E
 
@@ -87,7 +87,6 @@ def portugal():
     E.append(texto("de 1923", 705, y + 100, 72, INK, align="l", peso=0.7))
     E += flordelis(810, 740, 0.9, fill=VERDE, seed=80)
     E.append(texto("nasce o CNE", 790, 960, 86, VERDE, peso=1.0, sublinhado=True, ancora="Corpo"))
-    E.append(texto("Portugal", 790, 1180, 72, CINZA, peso=0.8))
     return E
 
 
@@ -146,9 +145,11 @@ def missao():
 
 
 def fim():
-    E = [texto("Sempre", 540, 380, 200, VERDE, peso=1.1, ancora="Sempre"), texto("Alerta!", 540, 570, 200, VERDE, peso=1.1)]
-    E += flordelis(540, 880, 1.7, fill=VERDE, seed=160)
-    E.append(imagem("logo", 540, 1280, 260, peso=1.0))
+    """A flor-de-lis desenha-se durante «continua a escrever-se»; «Sempre Alerta!» só aparece quando a voz o diz."""
+    E = flordelis(540, 880, 1.7, fill=VERDE, seed=160)
+    E.append(texto("Sempre", 540, 380, 200, VERDE, peso=1.1, ancora="Sempre"))
+    E.append(texto("Alerta!", 540, 570, 200, VERDE, peso=1.1, ancora="Alerta"))
+    E.append(imagem("logo", 540, 1235, 260, peso=1.0))
     E.append(texto("@994caxinas", 540, 1440, 68, INK, peso=1.0))
     return E
 
