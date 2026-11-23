@@ -20,7 +20,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from audio import SR, decode, ffmpeg_exe, folha, risco, tratar_voz, trim_silence, write_wav  # noqa: E402
+from audio import SR, decode, ffmpeg_exe, folha, normalizar_loudness, risco, tratar_voz, trim_silence, write_wav  # noqa: E402
+from gravacao import preparar as preparar_gravacao  # noqa: E402
 from musica import gerar as gerar_musica  # noqa: E402
 from cenas import CENAS  # noqa: E402
 from config import *  # noqa: E402
@@ -79,20 +80,23 @@ def agenda(elems, t_ini, t_fim, palavras):
         anc.append(tt)
 
     def corre(f):
-        cur, out = t_ini, []
+        cur, out, atraso = t_ini, [], 0.0
         for j, (e, a) in enumerate(zip(elems, anc)):
             if a is not None and j > 0:                 # o 1.º elemento (o título) nunca espera pela voz
-                cur = max(cur, a - 0.10)
+                alvo = a - e.get("avanco", 0.10)        # `avanco`: quantos segundos antes da palavra o desenho começa
+                if e.get("avanco") is not None:         # âncora estrita: não pode começar depois do alvo
+                    atraso = max(atraso, cur - alvo)
+                cur = max(cur, alvo)
             d = bruto(e) * f
             out.append((cur, cur + d))
             cur += d + 0.05
-        return out, cur
+        return out, cur, atraso
 
     lo, hi = 0.25, 1.9
     for _ in range(14):
         mid = (lo + hi) / 2
-        _, fim = corre(mid)
-        if fim <= t_fim:
+        _, fim, atraso = corre(mid)
+        if fim <= t_fim and atraso <= 0.03:
             lo = mid
         else:
             hi = mid
@@ -101,30 +105,39 @@ def agenda(elems, t_ini, t_fim, palavras):
 
 def construir(caminho_guiao):
     cfg = json.loads(Path(caminho_guiao).read_text(encoding="utf-8"))
-    voz, pron = cfg["voz"], cfg.get("pronuncia", {})
+    voz, pron = cfg.get("voz"), cfg.get("pronuncia", {})
+    grav = preparar_gravacao(cfg, cfg["blocos"]) if cfg.get("gravacao") else None
     blocos, partes = [], []
-    cur, livre = 0.35, 0.0
+    cur, livre, fim_des = 0.35, 0.0, 0.0
     for i, rb in enumerate(cfg["blocos"]):
         nova = i > 0 and not rb.get("continua")
-        start = cur if i == 0 else (max(cur + GAP_PAG, livre) if nova else cur + GAP_CONT)
-        frases = re.split(r"(?<=[.!?])\s+", rb["texto"].strip())
-        ws, x_all, t_loc = [], [], 0.0
-        for fr in frases:                                     # uma síntese por frase: entoação mais natural, pausas controladas
-            spoken = " ".join(falado(w, pron) for w in fr.split())
-            mp3, pal = sintetizar(spoken, voz["nome"], rb.get("velocidade", voz["velocidade"]), rb.get("tom", voz["tom"]))
-            x, off = trim_silence(decode(mp3))
-            dur = len(x) / SR
-            for w in palavras_do_bloco(fr, pron, pal, dur, off):
-                w["t0"] += start + t_loc
-                w["t1"] += start + t_loc
-                ws.append(w)
-            partes.append((start + t_loc, x))
-            t_loc += dur + (PAUSA_FRASE + (0.12 if fr.endswith("?") else 0.0))
-        end = start + t_loc - PAUSA_FRASE
+        start = cur if i == 0 else (max(cur + GAP_PAG, livre) if nova else max(cur + GAP_CONT, fim_des))   # na mesma página espera que o desenho anterior acabe
+        if grav:                                              # voz gravada: um troço contínuo por bloco, com as pausas naturais
+            g = grav[i]
+            d0 = start + rb.get("atraso", 0.0)                    # `atraso`: o desenho começa primeiro e a voz só entra d0 depois
+            ws = [{"text": w["text"], "t0": w["t0"] + d0, "t1": w["t1"] + d0} for w in g["words"]]
+            partes.append((d0, g["x"]))
+            end = d0 + g["fim"]
+        else:
+            frases = re.split(r"(?<=[.!?])\s+", rb["texto"].strip())
+            ws, x_all, t_loc = [], [], 0.0
+            for fr in frases:                                 # uma síntese por frase: entoação mais natural, pausas controladas
+                spoken = " ".join(falado(w, pron) for w in fr.split())
+                mp3, pal = sintetizar(spoken, voz["nome"], rb.get("velocidade", voz["velocidade"]), rb.get("tom", voz["tom"]))
+                x, off = trim_silence(decode(mp3))
+                dur = len(x) / SR
+                for w in palavras_do_bloco(fr, pron, pal, dur, off):
+                    w["t0"] += start + t_loc
+                    w["t1"] += start + t_loc
+                    ws.append(w)
+                partes.append((start + t_loc, x))
+                t_loc += dur + (PAUSA_FRASE + (0.12 if fr.endswith("?") else 0.0))
+            end = start + t_loc - PAUSA_FRASE
         folga = rb.get("folga", 0.30 if (i + 1 < len(cfg["blocos"]) and not cfg["blocos"][i + 1].get("continua")) else 0.2)
         elems = CENAS[rb["cena"]](rb.get("parte"))
         tempos = agenda(elems, start + 0.05, end + folga, ws)
-        livre = max(t1 for _, t1 in tempos) + PRE + SLIDE + 0.7        # a página seguinte espera que o desenho acabe
+        fim_des = max(t1 for _, t1 in tempos) + 0.05
+        livre = fim_des + PRE + SLIDE + 0.7        # a página seguinte espera que o desenho acabe
         blocos.append({"cena": rb["cena"], "parte": rb.get("parte"), "nova": nova or i == 0, "start": start, "end": end, "words": ws,
                        "folga": folga, "elems": elems, "tempos": tempos,
                        "texto": rb["texto"], "legenda_n": rb.get("legenda_n")})
@@ -141,7 +154,7 @@ def construir(caminho_guiao):
     ultimo = max(e["t1"] for p in paginas for e in p["els"])
     total = max(blocos[-1]["end"], ultimo) + 2.2           # o cartão final fica parado ~2 s, com a música a esvanecer
     segs = sorted(((e["t0"], e["t1"], e, k) for k, p in enumerate(paginas) for e in p["els"] if e["k"] in ("path", "texto")), key=lambda s: s[0])
-    return {"blocos": blocos, "paginas": paginas, "segs": segs, "total": total, "n_frames": int(math.ceil(total * FPS)), "cfg": cfg}, partes
+    return {"blocos": blocos, "paginas": paginas, "segs": segs, "total": total, "n_frames": int(math.ceil(total * FPS)), "cfg": cfg, "gravada": bool(grav)}, partes
 
 
 # ------------------------------------------------------------------ áudio
@@ -151,7 +164,8 @@ def mistura(tl, partes):
     for start, x in partes:
         a = int(start * SR)
         voz[a:a + len(x)] += x
-    voz = tratar_voz(voz)                                      # compressão suave, brilho e uma pitada de sala
+    if not tl["gravada"]:
+        voz = tratar_voz(voz)                                  # compressão suave, brilho e uma pitada de sala (só na voz sintética)
     fx = np.zeros(n, np.float32)
     for k, (t0, t1, e, pg) in enumerate(tl["segs"]):           # o riscar do marcador: quase impercetível
         s = risco(max(t1 - t0, 0.1), seed=k) * 0.16
@@ -164,6 +178,8 @@ def mistura(tl, partes):
     musica = gerar_musica(n / SR, voz)
     musica = np.pad(musica, (0, max(0, n - len(musica))))[:n]
     mix = voz + fx + musica
+    if tl["gravada"]:
+        return normalizar_loudness(mix)[: int(tl["total"] * SR)]               # -15 LUFS, pico -1,5 dB
     mix *= 0.72 / (float(np.percentile(np.abs(mix), 99.7)) + 1e-9)      # normalização linear (mantém as diferenças de nível)
     mix = np.tanh(mix * 1.15) / np.tanh(1.15) * 0.89                    # limitador suave para os picos
     return mix[: int(tl["total"] * SR)]
@@ -389,7 +405,8 @@ def main():
         return
     wav = out / f"{nome}.wav"
     write_wav(str(wav), mistura(tl, partes))
-    (out / f"{nome}.legenda.txt").write_text(tl["cfg"].get("legenda", "") + "\n", encoding="utf-8")
+    if tl["cfg"].get("legenda"):
+        (out / f"{nome}.legenda.txt").write_text(tl["cfg"]["legenda"] + "\n", encoding="utf-8")
     print(f"[2/3] A desenhar {tl['n_frames']} frames ({a.workers} processos)")
     codificar(tl, wav, out / f"{nome}.mp4", a.workers)
     wav.unlink(missing_ok=True)

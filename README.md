@@ -8,7 +8,13 @@ pip install -r requirements.txt
 python src/render.py guioes/como_surgiu.json              # -> output/como_surgiu.mp4 (+ .legenda.txt)
 python src/render.py guioes/como_surgiu.json --png 6 20   # só imagens de teste (segundos)
 ```
-Voz: `edge-tts` (`pt-PT-DuarteNeural`), precisa de acesso a speech.platform.bing.com. Fonte: Chewy (em `assets/fonts/`; instala-a no sistema).
+Voz: a **gravação real** em `assets/gravacao/voz_original.mp4` (o guião tem o bloco `"gravacao"`). Sem esse bloco, usa-se `edge-tts` (`pt-PT-DuarteNeural`).
+Fonte: Chewy (em `assets/fonts/`; instala-a no sistema).
+
+## Voz gravada
+- `python src/transcrever.py [ini fim]` (precisa de `faster-whisper`) gera `assets/gravacao/palavras.json` com o tempo de cada palavra; só é preciso se a gravação mudar. `ini`/`fim` = parte que é fala (a conversa antes/depois da leitura fica de fora).
+- `src/gravacao.py` alinha o texto do guião (tem de ser o que a pessoa diz) a essas palavras, corta um troço por bloco no ponto mais silencioso da pausa e deixa as pausas entre páginas ao render.
+- Tratamento (`audio.tratar_gravacao`): repara picos cortados, tira graves e «caixa», dá presença, doma os «ss», comprime e nivela; mistura final a -15 LUFS (pico -1,5 dB).
 
 ## Especificações do Reels
 Ver [`ESPECIFICACOES_REELS.md`](ESPECIFICACOES_REELS.md) (zonas seguras, codificação, tipografia). `python src/verificar.py guioes/como_surgiu.json output/como_surgiu.mp4` confirma tudo.

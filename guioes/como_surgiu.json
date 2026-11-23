@@ -1,56 +1,76 @@
 {
   "titulo": "Como surgiu o Escutismo nas Caxinas",
-  "voz": {
-    "nome": "pt-PT-DuarteNeural",
-    "velocidade": "-2%",
-    "tom": "+0Hz"
-  },
-  "pronuncia": {
-    "1907": "mil novecentos e sete",
-    "1923": "mil novecentos e vinte e três",
-    "1991": "mil novecentos e noventa e um",
-    "1998": "mil novecentos e noventa e oito",
-    "2013": "dois mil e treze",
-    "2022": "dois mil e vinte e dois",
-    "994": "nove nove quatro",
-    "27": "vinte e sete",
-    "100": "cem",
-    "6": "seis",
-    "22": "vinte e dois",
-    "35": "trinta e cinco",
-    "150": "cento e cinquenta"
+  "gravacao": {
+    "audio": "assets/gravacao/voz_original.mp4",
+    "palavras": "assets/gravacao/palavras.json"
   },
   "blocos": [
     {
       "cena": "gancho",
-      "velocidade": "+5%",
-      "tom": "+3Hz",
       "legenda_n": 4,
-      "texto": "Como nasce um agrupamento de escuteiros, numa terra de pescadores?"
+      "texto": "Como nasce um agrupamento de escuteiros numa terra de pescadores?"
+    },
+    {
+      "cena": "remo",
+      "texto": "Nas Caxinas, o mar sempre ensinou a mesma lição. Ninguém rema sozinho.",
+      "legenda_n": -3
     },
     {
       "cena": "caxinas",
-      "texto": "Em 1991, nas Caxinas, por iniciativa do Monsenhor Domingos de Araújo, nasceu o Agrupamento 994.",
-      "legenda_n": -2
+      "legenda_n": -2,
+      "texto": "Em 1991, por iniciativa do Monsenhor Domingos de Araújo, o escutismo lançou a âncora por cá, e nasceu o Agrupamento 994."
     },
     {
       "cena": "chefes",
-      "texto": "E o testemunho passou de mão em mão: o chefe Miguel, depois o chefe Milton, filho do chefe Miguel, e hoje o chefe Albertino."
+      "texto": "De chefe em chefe, o testemunho nunca caiu. Primeiro, o chefe Miguel, nosso fundador. Depois, o chefe Milton, seu filho, e hoje, o chefe Albertino."
     },
     {
       "cena": "hoje",
-      "texto": "Hoje somos quatro secções, dos 6 aos 22 anos: Lobitos, Exploradores, Pioneiros e Caminheiros. Com acampamentos, aventura e serviço à comunidade."
+      "parte": "titulo",
+      "folga": 0.3,
+      "texto": "Dos 6 aos 22 anos, somos 4 secções."
+    },
+    {
+      "cena": "hoje",
+      "parte": "lobitos",
+      "continua": true,
+      "atraso": 0.75,
+      "folga": 0.7,
+      "texto": "Lobitos,"
+    },
+    {
+      "cena": "hoje",
+      "parte": "exploradores",
+      "continua": true,
+      "atraso": 0.75,
+      "folga": 0.7,
+      "texto": "Exploradores,"
+    },
+    {
+      "cena": "hoje",
+      "parte": "pioneiros_caminheiros",
+      "continua": true,
+      "atraso": 0.9,
+      "folga": 1.1,
+      "texto": "Pioneiros e Caminheiros."
+    },
+    {
+      "cena": "hoje",
+      "parte": "rodape",
+      "continua": true,
+      "legenda_n": -4,
+      "folga": 0.3,
+      "texto": "Entre acampamentos, aventuras e serviço à comunidade, aqui ninguém fica em terra."
     },
     {
       "cena": "meta",
-      "texto": "Este ano, o nosso desafio é chegar aos 150 escuteiros."
+      "texto": "Este ano, o desafio é chegar aos 150 elementos, e há um lugar à tua espera."
     },
     {
       "cena": "convite",
       "folga": 1.2,
-      "legenda_n": -2,
-      "texto": "Vem conhecer-nos num sábado à tarde, na nossa sede. Para mais informação, fala connosco. Sempre Alerta!"
+      "legenda_n": -5,
+      "texto": "Aparece ao sábado à tarde, na nossa sede, ou mandas mensagem para saberes mais. O 994 chama por ti."
     }
-  ],
-  "legenda": "Como nasce um agrupamento de escuteiros, numa terra de pescadores? ✏️\nEm 1991, nas Caxinas, por iniciativa do Monsenhor Domingos de Araújo, nasceu o Agrupamento 994. Hoje somos quatro secções, dos 6 aos 22 anos, com acampamentos, aventura e serviço à comunidade — e este ano o desafio é chegar aos 150 escuteiros.\n\nVem conhecer-nos num sábado à tarde, na nossa sede. Para mais informação, fala connosco. Sempre Alerta!\n\n📞 924 428 343 · ✉️ geral.994@escutismo.pt · 🌐 994caxinas.com\n\n#escutismo #994caxinas #escuteiros #caxinas #viladoconde #sempreAlerta"
+  ]
 }
