@@ -23,7 +23,12 @@ Ver [`ESPECIFICACOES_REELS.md`](ESPECIFICACOES_REELS.md) (zonas seguras, codific
 - **Abertura:** uma pergunta enorme («Como nasce um agrupamento de escuteiros, numa terra de pescadores?») com o «?» a vermelho e marcador amarelo.
 - **Páginas:** cada página fica parada ~1,2 s depois da fala e o caderno desliza em 0,85 s (`SLIDE`, `GAP_PAG` em `src/render.py`).
 - **Voz:** uma síntese por frase (entoação mais natural) com pausas, mais calma (-2%), e um tratamento leve (graves, compressão, sala curta).
-- **Música:** original, gerada por `src/musica.py` (ukulele em Dó maior, baixo, almofada e shaker); baixa sozinha sob a voz.
+- **Música:** faixa gravada `assets/musica/bombinsound-happy-ukulele-512480.mp3` (54,4 s), ajustada aos ~69,6 s do vídeo por `src/musica.py`:
+  início e acorde final intactos; repete 3 ciclos de acordes (19,2 s: emenda 27,04 s ↔ 46,24 s da faixa, crossfade de 1,8 s
+  num tempo forte) e acelera a faixa 3 % sem mudar o tom para o acorde final acabar com o vídeo. Volume base −24 LUFS na
+  mistura final, fade-in de 1 s, +2,5 dB a partir dos 53 s. Configuração no bloco `"musica"` do guião.
+- **Mistura:** ganho linear até −16 LUFS e limitador só nos picos (teto −1,5 dBFS); substitui o `loudnorm`, que passava
+  sozinho para modo dinâmico com a voz gravada.
 - **Lápis e página:** quase impercetíveis (~25 dB e ~14 dB abaixo da voz); a mistura é normalizada de forma linear.
 
 ## Como funciona

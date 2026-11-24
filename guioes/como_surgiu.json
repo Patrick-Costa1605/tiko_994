@@ -4,6 +4,23 @@
     "audio": "assets/gravacao/voz_original.mp4",
     "palavras": "assets/gravacao/palavras.json"
   },
+  "musica": {
+    "ficheiro": "assets/musica/bombinsound-happy-ukulele-512480.mp3",
+    "emenda": [
+      27.04,
+      46.24
+    ],
+    "fim_som": 52.38,
+    "crossfade": 1.8,
+    "fade_in": 1.0,
+    "lufs": -24.0,
+    "subida": {
+      "t": 53.0,
+      "db": 2.5,
+      "rampa": 0.4
+    },
+    "folga_fim": 0.15
+  },
   "blocos": [
     {
       "cena": "gancho",

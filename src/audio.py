@@ -132,3 +132,27 @@ def esticar(x, tempo):
                           f"rubberband=tempo={tempo}:pitch=1:transients=mixed:formant=preserved", "-f", "f32le", "-ar", str(SR), "-ac", "1", "-"],
                          input=x.astype(np.float32).tobytes(), check=True, capture_output=True).stdout
     return np.frombuffer(out, dtype=np.float32).copy()
+
+
+def lufs(x):
+    """Loudness integrado (EBU R128, LUFS) de um sinal mono a SR."""
+    import re as _re
+    a = subprocess.run([ffmpeg_exe(), "-v", "info", "-f", "f32le", "-ar", str(SR), "-ac", "1", "-i", "-", "-af", "ebur128", "-f", "null", "-"],
+                       input=x.astype(np.float32).tobytes(), capture_output=True)
+    return float(_re.findall(r"I:\s+(-?[\d.]+) LUFS", a.stderr.decode("utf-8", "ignore"))[-1])
+
+
+def pico_real(x):
+    """True peak (dBTP, sobre-amostrado 4x pelo ebur128) de um sinal mono a SR."""
+    import re as _re
+    a = subprocess.run([ffmpeg_exe(), "-v", "info", "-f", "f32le", "-ar", str(SR), "-ac", "1", "-i", "-", "-af", "ebur128=peak=true", "-f", "null", "-"],
+                       input=x.astype(np.float32).tobytes(), capture_output=True)
+    return float(_re.findall(r"Peak:\s+(-?[\d.]+|-inf) dBFS", a.stderr.decode("utf-8", "ignore"))[-1])
+
+
+def normalizar_linear(x, alvo=-16.0, teto=-1.5):
+    """Ganho fixo até `alvo` LUFS e um limitador rápido só nos picos acima de `teto` dBFS (as proporções entre voz e música
+    mantêm-se). Ao contrário do `loudnorm`, nunca passa para modo dinâmico. Devolve (sinal, ganho aplicado)."""
+    G = 10 ** ((alvo - lufs(x)) / 20)
+    y = _ffmpeg_pcm(x * G, f"alimiter=limit={10 ** (teto / 20):.4f}:attack=1:release=40:level=false")
+    return y, G

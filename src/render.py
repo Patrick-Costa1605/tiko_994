@@ -20,9 +20,9 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from audio import SR, decode, ffmpeg_exe, folha, normalizar_loudness, risco, tratar_voz, trim_silence, write_wav  # noqa: E402
+from audio import SR, decode, ffmpeg_exe, folha, lufs, normalizar_linear, normalizar_loudness, pico_real, risco, tratar_voz, trim_silence, write_wav  # noqa: E402
 from gravacao import preparar as preparar_gravacao  # noqa: E402
-from musica import gerar as gerar_musica  # noqa: E402
+from musica import faixa as faixa_musica  # noqa: E402
 from cenas import CENAS  # noqa: E402
 from config import *  # noqa: E402
 from desenho import clamp, desenha_elemento, desenha_mao, ease, largura_texto, ponto_em, h01  # noqa: E402
@@ -175,14 +175,27 @@ def mistura(tl, partes):
         s = folha() * 0.045
         a = int(max(p["start"] - PRE - SLIDE, 0) * SR)
         fx[a:a + len(s)] += s
-    musica = gerar_musica(n / SR, voz)
+    mcfg = tl["cfg"]["musica"]
+    musica, info = faixa_musica(tl["total"], mcfg)                     # faixa gravada, emendada e ajustada à duração do vídeo
     musica = np.pad(musica, (0, max(0, n - len(musica))))[:n]
-    mix = voz + fx + musica
-    if tl["gravada"]:
-        return normalizar_loudness(mix)[: int(tl["total"] * SR)]               # -15 LUFS, pico -1,5 dB
-    mix *= 0.72 / (float(np.percentile(np.abs(mix), 99.7)) + 1e-9)      # normalização linear (mantém as diferenças de nível)
-    mix = np.tanh(mix * 1.15) / np.tanh(1.15) * 0.89                    # limitador suave para os picos
-    return mix[: int(tl["total"] * SR)]
+    base_fim = int(float(mcfg.get("subida", {}).get("t", tl["total"])) * SR)
+    # volume base da música: `lufs` (ex.: -24 LUFS) medido DEPOIS da normalização final da mistura (-16 LUFS)
+    base = slice(SR, base_fim)                                          # sem o fade-in e antes da subida final
+    g = 10 ** ((float(mcfg["lufs"]) - lufs(musica[base])) / 20)
+    for _ in range(5):
+        out, G = normalizar_linear(voz + fx + g * musica)
+        erro = float(mcfg["lufs"]) - lufs(G * g * musica[base])
+        if abs(erro) < 0.05:
+            break
+        g *= 10 ** (erro / 20)
+    mix = voz + fx + g * musica
+    out, G = normalizar_linear(mix)
+    limit = 20 * np.log10(np.abs(G * mix).max() / (np.abs(out).max() + 1e-12) + 1e-12)
+    print(f"  música: emenda aos {info['emenda_no_video']:.2f}s do vídeo, andamento x{info['tempo']:.4f}, acorde final acaba aos {info['fim_no_video']:.2f}s")
+    print(f"  níveis: música base {lufs(G * g * musica[base]):.1f} LUFS, voz {lufs(G * voz):.1f} LUFS, mistura {lufs(out):.1f} LUFS,"
+          f" pico real {pico_real(out):.1f} dBTP (limitador tirou no máx. {limit:.1f} dB aos picos)")
+    tl["stems"] = {"voz": G * voz, "musica": G * g * musica, "fx": G * fx}
+    return out[: int(tl["total"] * SR)]
 
 
 # ------------------------------------------------------------------ imagem
